@@ -48,13 +48,8 @@
       },
       {
         "tab": "功能",
-        "products": [
-          {
-            "product": "Law LM",
-            "pages": [
-              "untitled-page"
-            ]
-          }
+        "pages": [
+          "law-lm"
         ]
       }
     ]
