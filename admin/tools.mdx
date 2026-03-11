@@ -1,238 +1,38 @@
 ---
 title: "工具管理"
-description: "LawChat 工具管理功能"
+description: "LawChat 插件与外部工具管理"
 ---
+
+## 概述
+
+LawChat 提供了强大的外部工具接入能力（如法律案例搜索、计算器等）。管理员可以通过后台灵活地启用或禁用这些工具，并配置其运行参数。
 
 ## 工具列表
 
-### 查看所有工具
+后台工具管理页面显示了所有可用的外部插件及其当前状态：
 
-```bash
-curl -X GET http://localhost:7878/api/tools/admin/list \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
+- **工具名称**：插件的系统内部标识。
+- **显示名称**：用户在界面上看到的名称。
+- **描述信息**：说明该工具的具体功能及应用场景。
+- **当前状态**：显示该工具是否已在系统中启用。
 
-### 响应示例
+## 管理操作
 
-```json
-{
-  "tools": [
-    {
-      "id": 1,
-      "name": "case_law_search",
-      "display_name": "法律案例检索",
-      "description": "检索法律案例库中的相关案例",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "检索关键词或自然语言描述"
-          },
-          "domain_filter": {
-            "type": "string",
-            "description": "领域筛选",
-            "enum": ["刑事", "民事", "行政"]
-          }
-        },
-        "required": ["query"]
-      },
-{
-      "is_enabled": true,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
-    }
-  ]
-}
-```
+管理员可以在后台界面对插件执行以下管理任务：
 
-## 工具字段
+### 1. 启停控制
+- **一键启用/禁用**：管理员可以随时开关特定工具的访问权限，确保服务的稳定性或响应业务调整。
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | integer | 工具ID |
-| name | string | 工具唯一标识符 |
-| display_name | string | 工具显示名称 |
-| description | string | 工具描述 |
-| parameters | object | 参数定义（JSON Schema） |
-| is_enabled | boolean | 是否启用 |
-| created_at | timestamp | 创建时间 |
-| updated_at | timestamp | 更新时间 |
+### 2. 参数定义
+- **参数详情查看**：查看工具运行所需的具体参数定义（基于 JSON Schema 格式），如输入字段类型、是否必填等。
 
-## 工具操作
+## 关键字段
 
-### 启用工具
-
-```bash
-curl -X POST http://localhost:7878/api/tools/admin/{tool_name}/enable \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "message": "工具 case_law_search 已启用",
-  "tool": {
-    "name": "case_law_search",
-    "is_enabled": true
-  }
-}
-```
-
-### 禁用工具
-
-```bash
-curl -X POST http://localhost:7878/api/tools/admin/{tool_name}/disable \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "message": "工具 case_law_search 已禁用",
-  "tool": {
-    "name": "case_law_search",
-    "is_enabled": false
-  }
-}
-```
-
-## 工具状态
-
-| 状态 | 说明 |
+| 字段 | 说明 |
 |------|------|
-| enabled | 已启用（用户可以使用） |
-| disabled | 已禁用（用户无法使用） |
-
-## 工具参数
-
-### 参数类型
-
-| 类型 | 说明 |
-|------|------|
-| string | 字符串 |
-| integer | 整数 |
-| number | 浮点数 |
-| boolean | 布尔值 |
-| array | 数组 |
-| object | 对象 |
-
-### 参数示例
-
-#### 字符串参数
-
-```json
-{
-  "type": "string",
-  "description": "查询内容"
-}
-```
-
-#### 枚举参数
-
-```json
-{
-  "type": "string",
-  "description": "领域筛选",
-  "enum": ["刑事", "民事", "行政"]
-}
-```
-
-#### 数组参数
-
-```json
-{
-  "type": "array",
-  "description": "标签列表",
-  "items": {
-    "type": "string"
-  }
-}
-```
-
-#### 对象参数
-
-```json
-{
-  "type": "object",
-  "description": "地理位置",
-  "properties": {
-    "latitude": {"type": "number"},
-    "longitude": {"type": "number"}
-  },
-  "required": ["latitude", "longitude"]
-}
-```
-
-## 工具搜索
-
-### 按名称搜索
-
-```bash
-curl -X GET "http://localhost:7878/api/tools/admin/list?search=法律" \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 按状态筛选
-
-```bash
-curl -X GET "http://localhost:7878/api/tools/admin/list?enabled=true" \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-## 批量操作
-
-### 批量启用工具
-
-```bash
-curl -X POST http://localhost:7878/api/tools/admin/batch-enable \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
-  -d '{
-    "tool_names": ["case_law_search", "get_case_details"]
-  }'
-```
-
-### 批量禁用工具
-
-```bash
-curl -X POST http://localhost:7878/api/tools/admin/batch-disable \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
-  -d '{
-    "tool_names": ["case_law_search", "get_case_details"]
-  }'
-```
-
-## 工具调用统计
-
-### 查看工具调用统计
-
-```bash
-curl -X GET http://localhost:7878/api/tools/admin/stats \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "stats": [
-    {
-      "tool_name": "case_law_search",
-      "call_count": 1500,
-      "success_count": 1450,
-      "error_count": 50,
-      "avg_duration": 0.5
-    }
-  ]
-}
-```
-
-## 相关文档
-
-- [管理后台](/admin/overview) - 管理后台介绍
-- [用户管理](/admin/users) - 用户管理
-- [数据分析](/admin/analytics) - 数据分析
+| ID | 插件工具的唯一 ID |
+| 系统标识 | 用于代码逻辑中调用的内部名称 |
+| 显示名称 | 在前端用户交互界面展示的名称 |
+| 功能描述 | 该工具的主要作用说明 |
+| 参数配置 | 定义工具如何接收用户输入 |
+| 启用状态 | 决定用户是否可以使用该工具 |

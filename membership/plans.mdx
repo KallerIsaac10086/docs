@@ -1,241 +1,69 @@
 ---
-title: "套餐管理"
-description: "LawChat 套餐配置和管理"
+title: "计费逻辑"
+description: "LawChat 模型计费与积分扣除细则"
 ---
 
-## 套餐类型
+## 模型计费规则
 
-### 订阅类型
+我们为不同层级的模型设计了差异化的计费逻辑，以平衡用户体验与系统成本。
 
-| 类型 | 说明 |
-|------|------|
-| one_time | 一次性购买 |
-| recurring_monthly | 月付订阅 |
-| recurring_yearly | 年付订阅 |
+### 🟢 Free 模型 (入门款)
 
-### 套餐等级
+> **定位**：日常闲聊、简单查询、长文阅读。主打“无感消耗”。
 
-| 等级 | 说明 |
-|------|:------|
-| free | 免费套餐 |
-| pro | 专业套餐 |
-| max | 高级套餐 |
+- **基础规则**：**固定扣除 2 分 / 次**。
+- **不限长度**：不限输入、输出 Token 长度。
+- **不限上下文**：不限对话历史轮数。
+- **熔断机制**：
+  - **阈值**：单月累计消耗 Token 数超过 **200,000**。
+  - **触发后**：超出部分转为按量计费，每 1000 Tokens 额外扣除 1 分。
 
-## 套餐配置
+### 🔵 Pro 模型 (主力款)
 
-### 创建套餐
+> **定位**：复杂任务、代码生成、多轮深度对话。
 
-```bash
-curl -X POST http://localhost:7878/manage/plans \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
-  -d '{
-    "name": "Pro月卡",
-    "tier": "pro",
-    "price": 29.9,
-    "duration_days": 30,
-    "subscription_type": "recurring_monthly",
-    "daily_chat_limit": 100,
-    "free_model_daily_limit": 50,
-    "free_model_monthly_limit": 1500,
-    "pro_model_daily_limit": 100,
-    "pro_model_monthly_limit": 3000,
-    "max_model_daily_limit": 0,
-    "max_model_monthly_limit": 0,
-    "is_active": true,
-    "sort_order": 2
-  }'
-```
+Pro 模型采用 **“基础费 + 阶梯计费”** 模式：
 
-### 套餐字段
+- **单次基础费**：0.1 分 / 次。
+- **阶梯系数 ($k$)**：根据单次请求总 Token 数 (含历史) 动态调整。
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| name | string | 套餐名称 |
-| tier | string | 会员等级 (free/pro/max) |
-| price | decimal | 价格 |
-| duration_days | integer | 有效期（天） |
-| subscription_type | string | 订阅类型 |
-| daily_chat_limit | integer | 每日对话限制 |
-| free_model_daily_limit | integer | 免费模型每日限制 |
-| free_model_monthly_limit | integer | 免费模型每月限制 |
-| pro_model_daily_limit | integer | Pro模型每日限制 |
-| pro_model_monthly_limit | integer | Pro模型每月限制 |
-| max_model_daily_limit | integer | Max模型每日限制 |
-| max_model_monthly_limit | integer | Max模型每月限制 |
-| included_resource_products | array | 包含的资源包产品 |
-| is_active | boolean | 是否启用 |
-| sort_order | integer | 排序顺序 |
+| Token 范围 | 系数 ($k$) | 说明 |
+| :--- | :--- | :--- |
+| 0 - 1k | 0.8 | 入门惠民 |
+| 1k - 2k | 1.0 | 标准计费 |
+| 2k - 3k | 1.2 | 中等深度 |
+| 3k - 4k | 1.4 | 高阶创作 |
+| 4k - 10k | 1.6 | 溢价区 |
+| > 10k | 2.5 | 惩罚区 |
 
-## 套餐示例
+- **公式**：$\text{扣分} = (0.1 + (\text{Tokens}/1000) \times k) \times \text{思考倍率}$
 
-### Free 套餐
+### 🟣 Max 模型 (高端款)
 
-```json
-{
-  "name": "免费版",
-  "tier": "free",
-  "price": 0,
-  "duration_days": 0,
-  "subscription_type": "one_time",
-  "daily_chat_limit": 10,
-  "free_model_daily_limit": 10,
-  "free_model_monthly_limit": 300,
-  "pro_model_daily_limit": 0,
-  "pro_model_monthly_limit": 0,
-  "max_model_daily_limit": 0,
-  "max_model_monthly_limit": 0,
-  "is_active": true,
-  "sort_order": 1
-}
-```
+> **定位**：逻辑推理、数学解题、专业分析。
 
-### Pro 月卡
+Max 模型针对高成本模型采用更严格的计费：
 
-```json
-{
-  "name": "Pro月卡",
-  "tier": "pro",
-  "price": 29.9,
-  "duration_days": 30,
-  "subscription_type": "recurring_monthly",
-  "daily_chat_limit": 100,
-  "free_model_daily_limit": 50,
-  "free_model_monthly_limit": 1500,
-  "pro_model_daily_limit": 100,
-  "pro_model_monthly_limit": 3000,
-  "max_model_daily_limit": 0,
-  "max_model_monthly_limit": 0,
-  "is_active": true,
-  "sort_order": 2
-}
-```
+- **单次基础费**：0.2 分 / 次。
+- **阶梯系数 ($k$)**：
 
-### Pro 年卡
+| Token 范围 | 系数 ($k$) |
+| :--- | :--- |
+| 0 - 1k | 1.2 |
+| 1k - 2k | 1.4 |
+| 2k - 3k | 1.6 |
+| 3k - 4k | 1.8 |
+| 4k - 10k | 2.5 |
+| > 10k | 5.0 |
 
-```json
-{
-  "name": "Pro年卡",
-  "tier": "pro",
-  "price": 299,
-  "duration_days": 365,
-  "subscription_type": "recurring_yearly",
-  "daily_chat_limit": 100,
-  "free_model_daily_limit": 50,
-  "free_model_monthly_limit": 1500,
-  "pro_model_daily_limit": 100,
-  "pro_model_monthly_limit": 3000,
-  "max_model_daily_limit": 0,
-  "max_model_monthly_limit": 0,
-  "is_active": true,
-  "sort_order": 3
-}
-```
+- **公式**：$\text{扣分} = (0.2 + (\text{Tokens}/1000) \times k) \times \text{思考倍率}$
 
-### Max 月卡
+## 思考模式 (Thinking Mode)
 
-```json
-{
-  "name": "Max月卡",
-  "tier": "max",
-  "price": 99.9,
-  "duration_days": 30,
-  "subscription_type": "recurring_monthly",
-  "daily_chat_limit": 1000,
-  "free_model_daily_limit": 500,
-  "free_model_monthly_limit": 15000,
-  "pro_model_daily_limit": 1000,
-  "pro_model_monthly_limit": 30000,
-  "max_model_daily_limit": 1000,
-  "max_model_monthly_limit": 30000,
-  "is_active": true,
-  "sort_order": 4
-}
-```
+启用“思考模式”后，AI 将进行深度链式思考（Chain of Thought）。
+由于该模式消耗大量服务器计算资源，该次请求产生的所有计费（基础费及按量计费部分）均将 **双倍扣除 ($\times 2.0$)**。
 
-## 套餐管理 API
+## 积分重置规则
 
-### 获取所有套餐
-
-```bash
-curl -X GET http://localhost:7878/api/membership/plans
-```
-
-### 获取单个套餐
-
-```bash
-curl -X GET http://localhost:7878/manage/plans/{plan_id} \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 更新套餐
-
-```bash
-curl -X PUT http://localhost:7878/manage/plans/{plan_id} \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
-  -d '{
-    "name": "Pro月卡（更新）",
-    "price": 39.9
-  }'
-```
-
-### 删除套餐
-
-```bash
-curl -X DELETE http://localhost:7878/manage/plans/{plan_id} \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-## 资源产品
-
-### 创建资源产品
-
-```bash
-curl -X POST http://localhost:7878/manage/resource-products \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
-  -d '{
-    "name": "Token包 100万",
-    "pack_type": "tokens",
-    "resource_type": "tokens",
-    "amount": 1000000,
-    "reset_period": "monthly",
-    "allowed_models": ["all"],
-    "price": 9.9,
-    "is_active": true
-  }'
-```
-
-### 资源产品字段
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| name | string | 产品名称 |
-| pack_type | string | 包类型 |
-| resource_type | string | 资源类型 |
-| amount | integer | 数量 |
-| reset_period | string | 重置周期 (daily/weekly/monthly/yearly/never) |
-| allowed_models | array | 允许的模型列表 |
-| price | decimal | 价格 |
-| is_active | boolean | 是否启用 |
-
-## 套餐排序
-
-套餐按 `sort_order` 字段排序显示：
-
-- 数值越小，显示越靠前
-- 相同数值按创建时间排序
-
-## 套餐激活
-
-只有 `is_active` 为 `true` 的套餐才会：
-
-1. 在套餐列表中显示
-2. 允许用户购买
-3. 参与自动续费
-
-## 相关文档
-
-- [会员体系](/membership/overview) - 会员等级和权益
-- [支付系统](/membership/payment) - 支付流程和交易管理
+- 每月 1 号 0:00，系统将重置订阅用户的积分至 3500 分。
+- 上月剩余积分将清零，不累积至新月份。

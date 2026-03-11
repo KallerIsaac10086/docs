@@ -64,16 +64,7 @@ LawChat 提供完整的管理后台，用于管理用户、套餐、工具和数
 
 ## 权限控制
 
-管理后台需要管理员权限：
-
-```python
-from api.auth import get_current_admin, Admin
-
-@router.get("/admin/users")
-async def get_users(admin: Admin = Depends(get_current_admin)):
-    # 只有管理员可以访问
-    pass
-```
+管理后台仅限具有管理员权限的用户访问。系统通过严格的角色验证确保数据安全，非管理员用户无法进入管理界面。
 
 ## 安全建议
 

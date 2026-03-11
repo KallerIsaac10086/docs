@@ -14,59 +14,20 @@
         "tab": "指南",
         "groups": [
           {
-            "group": "快速开始",
-            "hidden": true,
+            "group": "入门指南",
             "pages": [
-              "index",
-              "quickstart"
+              "index"
             ]
           },
           {
-            "group": "核心概念",
-            "hidden": true,
-            "pages": [
-              "architecture"
-            ]
-          },
-          {
-            "group": "后端开发",
-            "hidden": true,
-            "pages": [
-              "backend/architecture",
-              "backend/database",
-              "backend/models",
-              "backend/scheduler"
-            ]
-          },
-          {
-            "group": "前端开发",
-            "hidden": true,
-            "pages": [
-              "frontend/architecture",
-              "frontend/components",
-              "frontend/stores"
-            ]
-          },
-          {
-            "group": "插件开发",
-            "hidden": true,
-            "pages": [
-              "plugins/guide",
-              "plugins/sdk",
-              "plugins/examples"
-            ]
-          },
-          {
-            "group": "会员系统",
+            "group": "会员与计费",
             "pages": [
               "membership/overview",
-              "membership/plans",
-              "membership/payment"
+              "membership/plans"
             ]
           },
           {
             "group": "管理后台",
-            "hidden": true,
             "pages": [
               "admin/overview",
               "admin/users",
@@ -75,71 +36,19 @@
             ]
           },
           {
-            "group": "部署指南",
-            "hidden": true,
-            "pages": [
-              "deployment/backend",
-              "deployment/frontend",
-              "deployment/mobile"
-            ]
-          },
-          {
-            "group": "帮助",
-            "hidden": true,
+            "group": "其他",
             "pages": [
               "faq",
               "troubleshooting"
             ]
           }
         ]
-      },
-      {
-        "tab": "API 参考",
-        "groups": [
-          {
-            "group": "API 文档",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "接口示例",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
-          }
-        ]
       }
     ]
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [],
-    "primary": {
-      "type": "button",
-      "label": "GitHub",
-      "href": "https://github.com"
-    }
-  },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
-    ]
-  },
   "footer": {
-    "socials": {}
+    "socials": {
+      "github": "https://github.com/kallerisaac10086/docs"
+    }
   }
 }

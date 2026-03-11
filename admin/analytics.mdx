@@ -1,255 +1,43 @@
 ---
 title: "数据分析"
-description: "LawChat 数据分析功能"
+description: "LawChat 业务增长与用量统计分析"
 ---
 
 ## 概述
 
-数据分析模块提供系统使用情况的统计和分析功能。
+数据分析模块为管理员提供了全方位的系统运行指标监控，帮助深入了解用户行为、业务增长及资源消耗情况，为运营决策提供数据支持。
 
-## 用户统计
+## 用户统计分析
 
-### 用户增长趋势
+管理员可以从多维度分析用户增长与活跃情况：
 
-```bash
-curl -X GET http://localhost:7878/manage/analytics/users/growth \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
+- **增长趋势**：监控每日新增用户、总用户量及活跃用户的变化情况。
+- **用户分布**：分析不同会员等级（Free、Pro、Max）的用户比例，以及账户状态（正常、禁用等）的分布。
 
-### 响应示例
+## 用量统计监控
 
-```json
-{
-  "data": [
-    {
-      "date": "2024-01-01",
-      "total_users": 100,
-      "new_users": 10,
-      "active_users": 80
-    },
-    {
-      "date": "2024-01-02",
-      "total_users": 110,
-      "new_users": 10,
-      "active_users": 85
-    }
-  ]
-}
-```
+系统实时记录并分析各项资源的消耗数据：
 
-### 用户分布
+### 1. Token 消耗统计
+- **总量监控**：查看全站每日消耗的总 Token 数量。
+- **输入输出比**：分析用户输入与 AI 生成内容的比例，优化上下文长度策略。
+- **日均用量**：计算平均每日消耗量，预估后端 API 成本。
 
-```bash
-curl -X GET http://localhost:7878/manage/analytics/users/distribution \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
+### 2. 对话活跃度
+- **对话次数统计**：监控系统每日发起的总对话次数。
+- **热门时段分析**：识别用户使用高峰期，合理配置服务器资源。
 
-### 响应示例
+## 财务与收入分析
 
-```json
-{
-  "by_tier": {
-    "free": 50,
-    "pro": 40,
-    "max": 10
-  },
-  "by_status": {
-    "normal": 95,
-    "disabled": 5
-  }
-}
-```
+针对盈利项目的核心数据分析：
 
-## 用量统计
+- **收入统计**：查看不同时间段内的订阅收入总额。
+- **套餐热度**：分析各级别套餐的购买转化率，优化定价策略。
+- **交易流水**：审计所有充值与消费行为，确保财务安全。
 
-### Token 使用统计
+## 数据展示
 
-```bash
-curl -X GET http://localhost:7878/manage/analytics/usage/tokens \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "data": [
-    {
-      "date": "2024-01-01",
-      "total_tokens": 100000,
-      "input_tokens": 50000,
-      "output_tokens": 50000
-    }
-  ],
-  "summary": {
-    "total_tokens": 3000000,
-    "avg_daily_tokens": 100000
-  }
-}
-```
-
-### 对话次数统计
-
-```bash
-curl -X GET http://localhost:7878/manage/analytics/usage/chats \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "data": [
-    {
-      "date": "2024-01-01",
-      "total_chats": 500,
-      "unique_users": 80
-    }
-  ]
-}
-```
-
-## 收入统计
-
-### 订阅收入
-
-```bash
-curl -X GET http://localhost:7878/manage/analytics/revenue/subscriptions \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "data": [
-    {
-      "date": "2024-01-01",
-      "new_subscriptions": 5,
-      "renewals": 20,
-      "revenue": 299.00
-    }
-  ],
-  "summary": {
-    "total_revenue": 8970.00,
-    "avg_daily_revenue": 299.00
-  }
-}
-```
-
-### 资源包收入
-
-```bash
-curl -X GET http://localhost:7878/manage/analytics/revenue/packs \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "data": [
-    {
-      "date": "2024-01-01",
-      "pack_sales": 10,
-      "revenue": 99.00
-    }
-  ]
-}
-```
-
-## 交易统计
-
-### 交易记录
-
-```bash
-curl -X GET http://localhost:7878/manage/analytics/transactions \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "transactions": [
-    {
-      "id": 123,
-      "user_id": 1,
-      "amount": 29.9,
-      "status": "completed",
-      "type": "subscription",
-      "created_at": "2024-01-01T00:00:00Z"
-    }
-  ],
-  "summary": {
-    "total_transactions": 100,
-    "total_amount": 2990.00,
-    "success_rate": 0.95
-  }
-}
-```
-
-## 模型使用统计
-
-### 模型调用统计
-
-```bash
-curl -X GET http://localhost:7878/manage/analytics/models/usage \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-### 响应示例
-
-```json
-{
-  "data": [
-    {
-      "model_id": "model-1",
-      "model_name": "LexJade 民法",
-      "call_count": 5000,
-      "token_count": 2500000
-    }
-  ]
-}
-```
-
-## 时间范围
-
-### 查询参数
-
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| start_date | 开始日期 | 2024-01-01 |
-| end_date | 结束日期 | 2024-01-31 |
-| period | 时间周期 | daily/weekly/monthly |
-
-### 示例查询
-
-```bash
-curl -X GET "http://localhost:7878/manage/analytics/users/growth?start_date=2024-01-01&end_date=2024-01-31&period=daily" \
-  -H "Authorization: Bearer ADMIN_TOKEN"
-```
-
-## 导出数据
-
-### 导出为 CSV
-
-```bash
-curl -X GET "http://localhost:7878/manage/analytics/export?format=csv" \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
-  -o analytics.csv
-```
-
-### 导出为 JSON
-
-```bash
-curl -X GET "http://localhost:7878/manage/analytics/export?format=json" \
-  -H "Authorization: Bearer ADMIN_TOKEN" \
-  -o analytics.json
-```
-
-## 相关文档
-
-- [管理后台](/admin/overview) - 管理后台介绍
-- [用户管理](/admin/users) - 用户管理
-- [工具管理](/admin/tools) - 工具管理
+后台采用可视化图表展示数据，包括但不限于：
+- 趋势折线图（用于用户增长与 Token 消耗）。
+- 比例饼图（用于会员分布与套餐热度）。
+- 详细数据表格（用于具体交易与操作审计）。
