@@ -15,6 +15,7 @@
         "groups": [
           {
             "group": "快速开始",
+            "hidden": true,
             "pages": [
               "index",
               "quickstart"
@@ -22,12 +23,14 @@
           },
           {
             "group": "核心概念",
+            "hidden": true,
             "pages": [
               "architecture"
             ]
           },
           {
             "group": "后端开发",
+            "hidden": true,
             "pages": [
               "backend/architecture",
               "backend/database",
@@ -37,6 +40,7 @@
           },
           {
             "group": "前端开发",
+            "hidden": true,
             "pages": [
               "frontend/architecture",
               "frontend/components",
@@ -45,6 +49,7 @@
           },
           {
             "group": "插件开发",
+            "hidden": true,
             "pages": [
               "plugins/guide",
               "plugins/sdk",
@@ -61,6 +66,7 @@
           },
           {
             "group": "管理后台",
+            "hidden": true,
             "pages": [
               "admin/overview",
               "admin/users",
@@ -70,6 +76,7 @@
           },
           {
             "group": "部署指南",
+            "hidden": true,
             "pages": [
               "deployment/backend",
               "deployment/frontend",
@@ -78,6 +85,7 @@
           },
           {
             "group": "帮助",
+            "hidden": true,
             "pages": [
               "faq",
               "troubleshooting"
@@ -105,10 +113,7 @@
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": []
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
