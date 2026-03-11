@@ -47,10 +47,13 @@
         ]
       },
       {
-        "tab": "Untitled Tab",
+        "tab": "功能",
         "products": [
           {
-            "product": "Law LM"
+            "product": "Law LM",
+            "pages": [
+              "untitled-page"
+            ]
           }
         ]
       }
