@@ -1,0 +1,241 @@
+---
+title: "套餐管理"
+description: "LawChat 套餐配置和管理"
+---
+
+## 套餐类型
+
+### 订阅类型
+
+| 类型 | 说明 |
+|------|------|
+| one_time | 一次性购买 |
+| recurring_monthly | 月付订阅 |
+| recurring_yearly | 年付订阅 |
+
+### 套餐等级
+
+| 等级 | 说明 |
+|------|:------|
+| free | 免费套餐 |
+| pro | 专业套餐 |
+| max | 高级套餐 |
+
+## 套餐配置
+
+### 创建套餐
+
+```bash
+curl -X POST http://localhost:7878/manage/plans \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "name": "Pro月卡",
+    "tier": "pro",
+    "price": 29.9,
+    "duration_days": 30,
+    "subscription_type": "recurring_monthly",
+    "daily_chat_limit": 100,
+    "free_model_daily_limit": 50,
+    "free_model_monthly_limit": 1500,
+    "pro_model_daily_limit": 100,
+    "pro_model_monthly_limit": 3000,
+    "max_model_daily_limit": 0,
+    "max_model_monthly_limit": 0,
+    "is_active": true,
+    "sort_order": 2
+  }'
+```
+
+### 套餐字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| name | string | 套餐名称 |
+| tier | string | 会员等级 (free/pro/max) |
+| price | decimal | 价格 |
+| duration_days | integer | 有效期（天） |
+| subscription_type | string | 订阅类型 |
+| daily_chat_limit | integer | 每日对话限制 |
+| free_model_daily_limit | integer | 免费模型每日限制 |
+| free_model_monthly_limit | integer | 免费模型每月限制 |
+| pro_model_daily_limit | integer | Pro模型每日限制 |
+| pro_model_monthly_limit | integer | Pro模型每月限制 |
+| max_model_daily_limit | integer | Max模型每日限制 |
+| max_model_monthly_limit | integer | Max模型每月限制 |
+| included_resource_products | array | 包含的资源包产品 |
+| is_active | boolean | 是否启用 |
+| sort_order | integer | 排序顺序 |
+
+## 套餐示例
+
+### Free 套餐
+
+```json
+{
+  "name": "免费版",
+  "tier": "free",
+  "price": 0,
+  "duration_days": 0,
+  "subscription_type": "one_time",
+  "daily_chat_limit": 10,
+  "free_model_daily_limit": 10,
+  "free_model_monthly_limit": 300,
+  "pro_model_daily_limit": 0,
+  "pro_model_monthly_limit": 0,
+  "max_model_daily_limit": 0,
+  "max_model_monthly_limit": 0,
+  "is_active": true,
+  "sort_order": 1
+}
+```
+
+### Pro 月卡
+
+```json
+{
+  "name": "Pro月卡",
+  "tier": "pro",
+  "price": 29.9,
+  "duration_days": 30,
+  "subscription_type": "recurring_monthly",
+  "daily_chat_limit": 100,
+  "free_model_daily_limit": 50,
+  "free_model_monthly_limit": 1500,
+  "pro_model_daily_limit": 100,
+  "pro_model_monthly_limit": 3000,
+  "max_model_daily_limit": 0,
+  "max_model_monthly_limit": 0,
+  "is_active": true,
+  "sort_order": 2
+}
+```
+
+### Pro 年卡
+
+```json
+{
+  "name": "Pro年卡",
+  "tier": "pro",
+  "price": 299,
+  "duration_days": 365,
+  "subscription_type": "recurring_yearly",
+  "daily_chat_limit": 100,
+  "free_model_daily_limit": 50,
+  "free_model_monthly_limit": 1500,
+  "pro_model_daily_limit": 100,
+  "pro_model_monthly_limit": 3000,
+  "max_model_daily_limit": 0,
+  "max_model_monthly_limit": 0,
+  "is_active": true,
+  "sort_order": 3
+}
+```
+
+### Max 月卡
+
+```json
+{
+  "name": "Max月卡",
+  "tier": "max",
+  "price": 99.9,
+  "duration_days": 30,
+  "subscription_type": "recurring_monthly",
+  "daily_chat_limit": 1000,
+  "free_model_daily_limit": 500,
+  "free_model_monthly_limit": 15000,
+  "pro_model_daily_limit": 1000,
+  "pro_model_monthly_limit": 30000,
+  "max_model_daily_limit": 1000,
+  "max_model_monthly_limit": 30000,
+  "is_active": true,
+  "sort_order": 4
+}
+```
+
+## 套餐管理 API
+
+### 获取所有套餐
+
+```bash
+curl -X GET http://localhost:7878/api/membership/plans
+```
+
+### 获取单个套餐
+
+```bash
+curl -X GET http://localhost:7878/manage/plans/{plan_id} \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 更新套餐
+
+```bash
+curl -X PUT http://localhost:7878/manage/plans/{plan_id} \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "name": "Pro月卡（更新）",
+    "price": 39.9
+  }'
+```
+
+### 删除套餐
+
+```bash
+curl -X DELETE http://localhost:7878/manage/plans/{plan_id} \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+## 资源产品
+
+### 创建资源产品
+
+```bash
+curl -X POST http://localhost:7878/manage/resource-products \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "name": "Token包 100万",
+    "pack_type": "tokens",
+    "resource_type": "tokens",
+    "amount": 1000000,
+    "reset_period": "monthly",
+    "allowed_models": ["all"],
+    "price": 9.9,
+    "is_active": true
+  }'
+```
+
+### 资源产品字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| name | string | 产品名称 |
+| pack_type | string | 包类型 |
+| resource_type | string | 资源类型 |
+| amount | integer | 数量 |
+| reset_period | string | 重置周期 (daily/weekly/monthly/yearly/never) |
+| allowed_models | array | 允许的模型列表 |
+| price | decimal | 价格 |
+| is_active | boolean | 是否启用 |
+
+## 套餐排序
+
+套餐按 `sort_order` 字段排序显示：
+
+- 数值越小，显示越靠前
+- 相同数值按创建时间排序
+
+## 套餐激活
+
+只有 `is_active` 为 `true` 的套餐才会：
+
+1. 在套餐列表中显示
+2. 允许用户购买
+3. 参与自动续费
+
+## 相关文档
+
+- [会员体系](/membership/overview) - 会员等级和权益
+- [支付系统](/membership/payment) - 支付流程和交易管理

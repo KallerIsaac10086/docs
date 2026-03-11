@@ -1,0 +1,376 @@
+---
+title: "插件开发指南"
+description: "学习如何为 LawChat 开发自定义插件"
+---
+
+## 概述
+
+LawChat 采用插件化架构，允许开发者轻松扩展工具功能。插件系统分为三个部分：
+
+- **后端插件**：实现具体的工具逻辑
+- **前端集成**：提供工具调用的用户界面
+- **管理后台**：管理工具的上架/下架状态
+
+## 快速开始
+
+### 1. 创建插件文件
+
+在 `backend/tools/` 目录下创建新文件，例如 `my_tool.py`：
+
+```python
+from typing import Any, Dict
+from .base_tool import BaseTool, ToolDefinition
+
+class MyTool(BaseTool):
+    
+    def initialize(self, vector_store=None):
+        pass
+    
+    @property
+    def definition(self) -> ToolDefinition:
+        return ToolDefinition(
+            name="my_tool",
+            display_name="我的工具",
+            description="这是一个示例工具",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "查询内容"
+                    }
+                },
+                "required": ["query"]
+            }
+        )
+    
+    async def execute(self, **kwargs) -> str:
+        self.validate_parameters(kwargs)
+        query = kwargs.get("query")
+        return f"处理查询：{query}"
+```
+
+### 2. 注册插件
+
+在 `backend/tools/__init__.py` 中导入并注册：
+
+```python
+from .my_tool import MyTool
+
+_my_tool = MyTool()
+
+def register_tools_from_database():
+    enabled_tool_ids = load_tools_from_database()
+    
+    tools_to_register = {
+        _my_tool.definition.name: _my_tool
+    }
+    
+    for tool_name, tool_instance in tools_to_register.items():
+        if tool_name in enabled_tool_ids:
+            if not get_global_registry().has_tool(tool_name):
+                register_tool(tool_instance)
+        else:
+            if get_global_registry().has_tool(tool_name):
+                unregister_tool(tool_name)
+
+register_tools_from_database()
+
+def initialize_all_tools():
+    _my_tool.initialize()
+```
+
+### 3. 添加数据库初始化
+
+在 `backend/init_db.py` 中添加插件到初始化列表：
+
+```python
+from tools.my_tool import MyTool
+
+def init_tools():
+    db = SessionLocal()
+    try:
+        existing_tool_ids = set(t.id for t in db.query(Tool).all())
+        
+        tools_to_register = [
+            MyTool()
+        ]
+```
+
+### 4. 重启后端服务
+
+重启后端服务后，插件将自动注册到数据库中。
+
+## 参数定义
+
+参数定义使用 JSON Schema 格式：
+
+### 基本类型
+
+```python
+parameters={
+    "type": "object",
+    "properties": {
+        "string_param": {
+            "type": "string",
+            "description": "字符串参数"
+        },
+        "integer_param": {
+            "type": "integer",
+            "description": "整数参数",
+            "minimum": 1,
+            "maximum": 100
+        },
+        "number_param": {
+            "type": "number",
+            "description": "数字参数"
+        },
+        "boolean_param": {
+            "type": "boolean",
+            "description": "布尔参数"
+        }
+    },
+    "required": ["string_param"]
+}
+```
+
+### 枚举类型
+
+```python
+"domain_filter": {
+    "type": "string",
+    "description": "领域筛选",
+    "enum": ["刑事", "民事", "行政"]
+}
+```
+
+### 数组类型
+
+```python
+"tags": {
+    "type": "array",
+    "description": "标签列表",
+    "items": {
+        "type": "string"
+    }
+}
+```
+
+### 嵌套对象
+
+```python
+"location": {
+    "type": "object",
+    "description": "地理位置",
+    "properties": {
+        "latitude": {"type": "number"},
+        "longitude": {"type": "number"}
+    },
+    "required": ["latitude", "longitude"]
+}
+```
+
+## 异步执行
+
+`execute` 方法必须是异步的：
+
+```python
+import asyncio
+
+async def execute(self, **kwargs) -> str:
+    await asyncio.sleep(1)
+    return "处理完成"
+```
+
+## 错误处理
+
+在 `execute` 方法中捕获异常并返回友好的错误信息：
+
+```python
+async def execute(self, **kwargs) -> str:
+    try:
+        result = await some_external_api_call(kwargs)
+        return str(result)
+    except ConnectionError:
+        return "连接外部服务失败，请稍后重试"
+    except Exception as e:
+        return f"发生错误: {str(e)}"
+```
+
+## 插件初始化
+
+如果插件需要初始化资源，实现 `initialize` 方法：
+
+```python
+class MyTool(BaseTool):
+    
+    def __init__(self):
+        self.api_client = None
+    
+    def initialize(self, vector_store=None):
+        self.api_client = MyAPIClient()
+        self.api_client.connect()
+```
+
+## 缓存机制
+
+使用缓存提高工具性能：
+
+```python
+from .cache import SearchResultCache
+
+class MyTool(BaseTool):
+    
+    def __init__(self):
+        self._cache = SearchResultCache()
+    
+    async def execute(self, **kwargs) -> str:
+        query = kwargs.get("query")
+        
+        cached = self._cache.get(query, **kwargs)
+        if cached:
+            return f"（缓存）{cached}"
+        
+        result = await self._perform_search(query)
+        self._cache.set(query, result, **kwargs)
+        
+        return result
+```
+
+## 管理后台
+
+插件注册后，可以在管理后台的 **工具管理** 页面中：
+
+1. 查看所有已注册的工具
+2. 启用/禁用工具（上架/下架）
+3. 查看工具描述和参数定义
+
+## AB 提示词
+
+系统支持为工具开启和关闭分别配置提示词：
+
+### 后端配置
+
+在模型配置中添加 AB 提示词字段：
+
+```json
+{
+  "system_prompt": "默认系统提示词",
+  "system_prompt_tools_enabled": "工具开启时的提示词",
+  "system_prompt_tools_disabled": "工具关闭时的提示词"
+}
+```
+
+### 提示词应用逻辑
+
+```python
+async def prepare_messages(model_info, messages, tools):
+    if tools:
+        system_prompt = model_info.get("system_prompt_tools_enabled") or model_info.get("system_prompt")
+    else:
+        system_prompt = model_info.get("system_prompt_tools_disabled") or model_info.get("system_prompt")
+    
+    if system_prompt:
+        messages = [m for m in messages if m.get("role") != "system"]
+        messages.insert(0, {"role": "system", "content": system_prompt})
+    
+    return messages
+```
+
+## 最佳实践
+
+### 1. 命名规范
+
+- 插件类名使用 PascalCase，如 `MyTool`
+- 插件名称使用 snake_case，如 `my_tool`
+- 文件名使用 snake_case，如 `my_tool.py`
+
+### 2. 参数描述
+
+为每个参数提供清晰的描述，帮助 AI 理解如何使用：
+
+```python
+"query": {
+    "type": "string",
+    "description": "用于检索的关键词或自然语言描述，应包含案由、关键事实或法律争议点。"
+}
+```
+
+### 3. 错误处理
+
+始终捕获异常并返回友好的错误信息：
+
+```python
+try:
+    result = await api_call()
+    return result
+except Exception as e:
+    return f"处理失败: {str(e)}"
+```
+
+### 4. 参数验证
+
+使用 `validate_parameters` 确保参数正确：
+
+```python
+async def execute(self, **kwargs) -> str:
+    self.validate_parameters(kwargs)
+```
+
+### 5. 返回格式
+
+返回字符串格式的内容，便于 AI 展示给用户：
+
+```python
+return f"查询结果：{result}"
+```
+
+### 6. 异步操作
+
+对于耗时操作，使用异步方式：
+
+```python
+import httpx
+
+async def execute(self, **kwargs) -> str:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        return await response.text()
+```
+
+## 调试技巧
+
+### 1. 使用日志输出
+
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+async def execute(self, **kwargs) -> str:
+    logger.debug(f"工具调用开始：{self.definition.name}")
+    logger.debug(f"参数：{kwargs}")
+    
+    result = await self._perform_operation(kwargs)
+    
+    logger.debug(f"工具调用结束：{self.definition.name}")
+    return result
+```
+
+### 2. 测试工具 API
+
+```bash
+curl -X POST http://localhost:7878/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "model": "your-model",
+    "messages": [{"role": "user", "content": "测试消息"}],
+    "tools": [{"name": "my_tool", "arguments": {"query": "test"}}]
+  }'
+```
+
+## 相关文档
+
+- [插件 SDK](/plugins/sdk) - 详细的 API 参考
+- [示例插件](/plugins/examples) - 完整的插件示例

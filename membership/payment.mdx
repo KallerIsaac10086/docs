@@ -1,0 +1,243 @@
+---
+title: "支付系统"
+description: "LawChat 支付流程和交易管理"
+---
+
+## 支付方式
+
+### 余额支付
+
+用户使用账户余额进行支付：
+
+1. 充值到账户余额
+2. 使用余额购买套餐或资源包
+3. 余额不足时提示充值
+
+### 订阅支付
+
+用户购买订阅套餐：
+
+1. 选择订阅套餐
+2. 完成支付
+3. 创建订阅记录
+4. 设置自动续费
+
+## 交易状态
+
+| 状态 | 说明 |
+|------|------|
+| pending | 待处理 |
+| completed | 已完成 |
+| failed | 失败 |
+| refunded | 已退款 |
+
+## 交易类型
+
+| 类型 | 说明 |
+|------|------|
+| subscription | 订阅购买 |
+| resource_pack | 资源包购买 |
+| recharge | 余额充值 |
+| refund | 退款 |
+
+## 支付流程
+
+### 1. 创建订单
+
+```bash
+curl -X POST http://localhost:7878/api/membership/subscriptions/purchase \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "plan_id": 1,
+    "payment_method": "balance"
+  }'
+```
+
+### 2. 支付处理
+
+后端处理支付：
+
+1. 验证用户余额
+2. 扣除相应金额
+3. 创建交易记录
+4. 更新用户会员状态
+5. 返回支付结果
+
+### 3. 支付结果
+
+成功响应：
+
+```json
+{
+  "success": true,
+  "transaction_id": 123,
+  "subscription_id": 456,
+  "message": "支付成功"
+}
+```
+
+失败响应：
+
+```json
+{
+  "success": false,
+  "error": "余额不足",
+  "message": "账户余额不足，请先充值"
+}
+```
+
+## 交易记录
+
+### 查询交易记录
+
+```bash
+curl -X GET http://localhost:7878/api/membership/transactions \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### 交易记录字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | integer | 交易ID |
+| user_id | integer | 用户ID |
+| plan_id | integer | 套餐ID |
+| product_id | integer | 产品ID |
+| amount | decimal | 金额 |
+| status | string | 交易状态 |
+| gateway | string | 支付网关 |
+| gateway_order_id | string | 网关订单号 |
+| items | array | 购买项 |
+| created_at | timestamp | 创建时间 |
+
+## 订阅管理
+
+### 创建订阅
+
+```bash
+curl -X POST http://localhost:7878/api/membership/subscriptions/purchase \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "plan_id": 1,
+    "payment_method": "balance",
+    "auto_renew": true
+  }'
+```
+
+### 查询订阅
+
+```bash
+curl -X GET http://localhost:7878/api/membership/subscriptions \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### 取消订阅
+
+```bash
+curl -X POST http://localhost:7878/api/membership/subscriptions/cancel \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "subscription_id": 456
+  }'
+```
+
+### 订阅字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | integer | 订阅ID |
+| user_id | integer | 用户ID |
+| plan_id | integer | 套餐ID |
+| status | string | 订阅状态 |
+| next_billing_date | timestamp | 下次扣费日期 |
+| billing_cycle | string | 计费周期 |
+| payment_method | string | 支付方式 |
+| auto_renew | boolean | 自动续费 |
+
+## 自动续费
+
+### 续费机制
+
+系统每小时检查一次需要续费的订阅：
+
+1. 查找 `next_billing_date` 已到的订阅
+2. 检查用户余额是否充足
+3. 执行扣费
+4. 更新会员有效期
+5. 更新下次扣费日期
+
+### 续费失败处理
+
+续费失败时：
+
+1. 记录失败日志
+2. 发送通知给用户
+3. 暂停自动续费
+4. 保留会员状态直到过期
+
+## 代金券
+
+### 兑换代金券
+
+```bash
+curl -X POST http://localhost:7878/api/membership/vouchers/redeem \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "code": "VOUCHER123"
+  }'
+```
+
+### 代金券字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | integer | 代金券ID |
+| code | string | 兑换码 |
+| type | string | 类型 |
+| amount | decimal | 金额 |
+| expires_at | timestamp | 过期时间 |
+| usage_limit | integer | 使用次数限制 |
+| used_count | integer | 已使用次数 |
+| is_active | boolean | 是否启用 |
+
+### 代金券验证
+
+兑换时验证：
+
+1. 检查代金券是否存在
+2. 检查是否已过期
+3. 检查使用次数是否超限
+4. 检查用户是否已使用过
+5. 验证通过后增加余额
+
+## 余额管理
+
+### 查询余额
+
+```bash
+curl -X GET http://localhost:7878/api/auth/users/me \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+响应包含 `balance` 字段。
+
+### 充值余额
+
+```bash
+curl -X POST http://localhost:7878/api/membership/recharge \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "amount": 100,
+    "payment_method": "alipay"
+  }'
+```
+
+## 相关文档
+
+- [会员体系](/membership/overview) - 会员等级和权益
+- [套餐管理](/membership/plans) - 套餐配置和管理

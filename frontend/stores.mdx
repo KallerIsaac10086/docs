@@ -1,0 +1,343 @@
+---
+title: "状态管理"
+description: "LawChat 前端状态管理说明"
+---
+
+## 概述
+
+LawChat 前端使用 Svelte 5 的 `$state` 语法进行状态管理。
+
+## Stores 列表
+
+| Store | 说明 |
+|-------|------|
+| auth.svelte.ts | 认证状态 |
+| chat.svelte.ts | 聊天状态 |
+| conversations.svelte.ts | 对话列表 |
+| models.svelte.ts | 模型列表 |
+| server.svelte.ts | 服务器状态 |
+| settings.svelte.ts | 设置 |
+| usage.svelte.ts | 用量统计 |
+| cart.svelte.ts | 购物车 |
+| private-chat.svelte.ts | 私有对话 |
+
+## Auth Store (auth.svelte.ts)
+
+```typescript
+import { browser } from '$app/environment';
+
+export class AuthStore {
+  token = $state<string | null>(null);
+  user = $state<User | null>(null);
+  isAuthenticated = $state(false);
+
+  constructor() {
+    if (browser) {
+      this.token = localStorage.getItem('token');
+      this.isAuthenticated = !!this.token;
+    }
+  }
+
+  async login(username: string, password: string): Promise<void> {
+    const response = await fetch('/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await response.json();
+    this.token = data.access_token;
+    this.isAuthenticated = true;
+    if (browser) {
+      localStorage.setItem('token', this.token!);
+    }
+    await this.fetchUser();
+  }
+
+  async logout(): Promise<void> {
+    this.token = null;
+    this.user = null;
+    this.isAuthenticated = false;
+    if (browser) {
+      localStorage.removeItem('token');
+    }
+  }
+
+  async fetchUser(): Promise<void> {
+    if (!this.token) return;
+    const response = await fetch('/me', {
+      headers: { 'Authorization': `Bearer ${this.token}` }
+    });
+    this.user = await response.json();
+  }
+}
+
+export const authStore = new AuthStore();
+```
+
+## Chat Store (chat.svelte.ts)
+
+```typescript
+export class ChatStore {
+  messages = $state<Message[]>([]);
+  isLoading = $state(false);
+  selectedModel = $state<string | null>(null);
+  isToolsEnabled = $state(false);
+  availableTools = $state<ToolDefinition[]>([]);
+
+  async sendMessage(content: string): Promise<void> {
+    this.messages.push({
+      role: 'user',
+      content,
+      timestamp: new Date()
+    });
+    
+    this.isLoading = true;
+    
+    try {
+      const response = await fetch('/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.token}`
+        },
+        body: JSON.stringify({
+          model: this.selectedModel,
+          messages: this.messages,
+          tools: this.isToolsEnabled ? this.availableTools : undefined
+        })
+      });
+      
+      const data = await response.json();
+      this.messages.push({
+        role: 'assistant',
+        content: data.choices[0].message.content,
+        timestamp: new Date()
+      });
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async loadTools(): Promise<void> {
+    try {
+      const response = await fetch('/v1/tools', {
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      });
+      const data = await response.json();
+      this.availableTools = data.tools || [];
+    } catch (error) {
+      console.error('加载工具列表失败:', error);
+    }
+  }
+
+  toggleToolsEnabled(): void {
+    this.isToolsEnabled = !this.isToolsEnabled;
+    if (this.isToolsEnabled) {
+      this.loadTools();
+    }
+  }
+
+  clearMessages(): void {
+    this.messages = [];
+  }
+}
+
+export const chatStore = new ChatStore();
+```
+
+## Conversations Store (conversations.svelte.ts)
+
+```typescript
+export class ConversationsStore {
+  conversations = $state<Conversation[]>([]);
+  currentConversationId = $state<string | null>(null);
+
+  get currentConversation(): Conversation | null {
+    return this.conversations.find(c => c.id === this.currentConversationId) || null;
+  }
+
+  async loadConversations(): Promise<void> {
+    const response = await fetch('/chats', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    });
+    this.conversations = await response.json();
+  }
+
+  async createConversation(title: string): Promise<Conversation> {
+    const response = await fetch('/chats', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
+      },
+      body: JSON.stringify({ title })
+    });
+    const conversation = await response.json();
+    this.conversations.unshift(conversation);
+    return conversation;
+  }
+
+  async deleteConversation(id: string): Promise<void> {
+    await fetch(`/chats/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    });
+    this.conversations = this.conversations.filter(c => c.id !== id);
+    if (this.currentConversationId === id) {
+      this.currentConversationId = null;
+    }
+  }
+
+  selectConversation(id: string): void {
+    this.currentConversationId = id;
+  }
+}
+
+export const conversationsStore = new ConversationsStore();
+```
+
+## Models Store (models.svelte.ts)
+
+```typescript
+export class ModelsStore {
+  models = $state<Model[]>([]);
+  isLoading = $state(false);
+
+  async loadModels(): Promise<void> {
+    this.isLoading = true;
+    try {
+      const response = await fetch('/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      });
+      const data = await response.json();
+      this.models = data.data || [];
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  getModelById(id: string): Model | null {
+    return this.models.find(m => m.id === id) || null;
+  }
+
+  getModelsByTier(tier: string): Model[] {
+    return this.models.filter(m => m.tier === tier);
+  }
+}
+
+export const modelsStore = new ModelsStore();
+```
+
+## Settings Store (settings.svelte.ts)
+
+```typescript
+import { browser } from '$app/environment';
+
+export class SettingsStore {
+  theme = $state<'light' | 'dark' | 'system'>('system');
+  fontSize = $state<number>(16);
+  autoScroll = $state(true);
+  sendOnEnter = $state(true);
+
+  constructor() {
+    if (browser) {
+      const saved = localStorage.getItem('settings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        this.theme = settings.theme || 'system';
+        this.fontSize = settings.fontSize || 16;
+        this.autoScroll = settings.autoScroll !== false;
+        this.sendOnEnter = settings.sendOnEnter !== false;
+      }
+    }
+  }
+
+  save(): void {
+    if (browser) {
+      localStorage.setItem('settings', JSON.stringify({
+        theme: this.theme,
+        fontSize: this.fontSize,
+        autoScroll: this.autoScroll,
+        sendOnEnter: this.sendOnEnter
+      }));
+    }
+  }
+
+  reset(): void {
+    this.theme = 'system';
+    this.fontSize = 16;
+    this.autoScroll = true;
+    this.sendOnEnter = true;
+    this.save();
+  }
+}
+
+export const settingsStore = new SettingsStore();
+```
+
+## Usage Store (usage.svelte.ts)
+
+```typescript
+export class UsageStore {
+  usage = $state<Usage | null>(null);
+  isLoading = $state(false);
+
+  async loadUsage(): Promise<void> {
+    this.isLoading = true;
+    try {
+      const response = await fetch('/usage', {
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`
+        }
+      });
+      this.usage = await response.json();
+    } finally {
+      this.isLoading = false;
+    }
+  }
+}
+
+export const usageStore = new UsageStore();
+```
+
+## 使用示例
+
+```svelte
+<script lang="ts">
+  import { authStore, chatStore, settingsStore } from '$lib/stores';
+</script>
+
+<div>
+  {#if authStore.isAuthenticated}
+    <p>欢迎，{authStore.user?.username}</p>
+    <button onclick={() => authStore.logout()}>退出</button>
+  {/if}
+  
+  <div>
+    {#each chatStore.messages as message}
+      <div class={message.role}>
+        {message.content}
+      </div>
+    {/each}
+  </div>
+  
+  <div>
+    <label>
+      主题：
+      <select bind:value={settingsStore.theme} onchange={() => settingsStore.save()}>
+        <option value="light">浅色</option>
+        <option value="dark">深色</option>
+        <option value="system">跟随系统</option>
+      </select>
+    </label>
+  </div>
+</div>
+```

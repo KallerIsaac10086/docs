@@ -1,97 +1,89 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "LawChat 文档"
+description: "LawChat 是一个完整的跨平台法律AI助手应用"
 ---
 
-## Setting up
+## 欢迎使用 LawChat
 
-Get your documentation site up and running in minutes.
+LawChat 是一个完整的跨平台法律AI助手应用，提供 Web、iOS 和 Android 多端支持，专注于法律领域的智能问答服务。
+
+## 核心特性
+
+<Columns cols={2}>
+  <Card
+    title="多端支持"
+    icon="globe"
+  >
+    支持 Web (SvelteKit)、iOS (Swift)、Android (Kotlin) 多端访问
+  </Card>
+  <Card
+    title="多模型接入"
+    icon="brain"
+  >
+    支持本地部署模型和云端API模型，灵活配置
+  </Card>
+  <Card
+    title="会员体系"
+    icon="crown"
+  >
+    三级会员 (Free/Pro/Max)，灵活的套餐配置
+  </Card>
+  <Card
+    title="用量管理"
+    icon="chart-bar"
+  >
+    精细化的 Token 和请求次数控制
+  </Card>
+  <Card
+    title="云端同步"
+    icon="cloud"
+  >
+    跨设备对话记录同步
+  </Card>
+  <Card
+    title="私有对话"
+    icon="lock"
+  >
+    支持1对1私密聊天功能
+  </Card>
+  <Card
+    title="文件处理"
+    icon="file"
+  >
+    支持文档和图片上传分析
+  </Card>
+  <Card
+    title="支付系统"
+    icon="credit-card"
+  >
+    支持余额支付、订阅扣费、代金券
+  </Card>
+</Columns>
+
+## 快速开始
 
 <Card
-  title="Start here"
+  title="开始使用"
   icon="rocket"
   href="/quickstart"
   horizontal
 >
-  Follow our three step quickstart guide.
+  跟随快速开始指南，在几分钟内启动 LawChat
 </Card>
 
-## Make it yours
+## 技术栈
 
-Design a docs site that looks great and empowers your users.
+### 后端
+- **框架**: FastAPI
+- **数据库**: SQLAlchemy (支持 SQLite / PostgreSQL)
+- **认证**: JWT + bcrypt
+- **异步**: asyncio + httpx
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+### 前端
+- **框架**: SvelteKit
+- **UI**: TailwindCSS
+- **状态管理**: Dexie (IndexedDB)
 
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+### 移动端
+- **iOS**: SwiftUI
+- **Android**: Kotlin

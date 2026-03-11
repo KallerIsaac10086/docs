@@ -1,0 +1,325 @@
+---
+title: "插件 SDK"
+description: "LawChat 插件开发 API 参考"
+---
+
+## BaseTool
+
+所有插件必须继承的基类。
+
+### 属性
+
+#### definition: ToolDefinition
+
+返回插件的元数据定义。
+
+```python
+@property
+def definition(self) -> ToolDefinition:
+    return ToolDefinition(
+        name="tool_name",
+        display_name="显示名称",
+        description="插件描述",
+        parameters={...}
+    )
+```
+
+### 方法
+
+#### initialize(vector_store=None)
+
+初始化插件，在服务启动时调用。
+
+```python
+def initialize(self, vector_store=None):
+    pass
+```
+
+#### execute(**kwargs) -> Any
+
+执行插件功能，必须异步实现。
+
+```python
+async def execute(self, **kwargs) -> str:
+    self.validate_parameters(kwargs)
+    return "执行结果"
+```
+
+#### __call__(**kwargs) -> Any
+
+直接调用插件的便捷方法。
+
+```python
+tool = MyTool()
+result = await tool(param1="value1")
+```
+
+#### validate_parameters(parameters: Dict[str, Any]) -> bool
+
+验证参数是否符合定义。
+
+```python
+self.validate_parameters({"query": "北京"})
+```
+
+## ToolDefinition
+
+插件元数据类。
+
+### 构造函数
+
+```python
+ToolDefinition(
+    name: str,
+    display_name: str,
+    description: str,
+    parameters: Dict[str, Any]
+)
+```
+
+### 字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| name | str | 插件唯一标识符 |
+| display_name | str | 插件显示名称 |
+| description | str | 插件功能描述 |
+| parameters | Dict[str, Any] | 参数定义（JSON Schema 格式） |
+
+## ToolRegistry
+
+插件注册中心。
+
+### 方法
+
+#### register_tool(tool: BaseTool)
+
+注册插件。
+
+```python
+from tools.registry import register_tool
+register_tool(MyTool())
+```
+
+#### unregister_tool(tool_name: str)
+
+注销插件。
+
+```python
+from tools.registry import unregister_tool
+unregister_tool("tool_name")
+```
+
+#### get_tool(tool_name: str) -> Optional[BaseTool]
+
+获取插件实例。
+
+```python
+from tools.registry import get_tool
+tool = get_tool("tool_name")
+```
+
+#### get_tool_definition(tool_name: str) -> Optional[ToolDefinition]
+
+获取插件定义。
+
+```python
+from tools.registry import get_tool_definition
+definition = get_tool_definition("tool_name")
+```
+
+#### list_tools() -> List[str]
+
+列出所有插件名称。
+
+```python
+from tools.registry import list_tools
+tools = list_tools()
+```
+
+#### list_tool_definitions() -> List[ToolDefinition]
+
+列出所有插件定义。
+
+```python
+from tools.registry import list_tool_definitions
+definitions = list_tool_definitions()
+```
+
+#### has_tool(tool_name: str) -> bool
+
+检查插件是否存在。
+
+```python
+from tools.registry import has_tool
+exists = has_tool("tool_name")
+```
+
+#### clear()
+
+清空所有插件。
+
+```python
+from tools.registry import clear
+clear()
+```
+
+#### tools_count: int
+
+插件数量。
+
+```python
+from tools.registry import get_global_registry
+count = get_global_registry().tools_count
+```
+
+## 参数类型
+
+### ParameterProperty
+
+参数属性定义。
+
+```python
+class ParameterProperty(TypedDict, total=False):
+    type: str
+    description: str
+    enum: Optional[List[str]]
+    properties: Optional[Dict[str, 'ParameterProperty']]
+    required: Optional[List[str]]
+    items: Optional['ParameterProperty']
+```
+
+### 类型说明
+
+| 类型 | 说明 |
+|------|------|
+| string | 字符串 |
+| integer | 整数 |
+| number | 浮点数 |
+| boolean | 布尔值 |
+| array | 数组 |
+| object | 对象 |
+
+## 缓存
+
+### SearchResultCache
+
+搜索结果缓存类。
+
+```python
+from tools.cache import SearchResultCache
+
+cache = SearchResultCache(max_size=1000, ttl=3600)
+```
+
+### 方法
+
+#### get(query: str, **params) -> Any
+
+从缓存获取结果。
+
+```python
+result = cache.get("search query", param1="value1")
+```
+
+#### set(query: str, result: Any, **params)
+
+设置缓存。
+
+```python
+cache.set("search query", result, param1="value1")
+```
+
+#### clear()
+
+清空缓存。
+
+```python
+cache.clear()
+```
+
+## 示例
+
+### 完整插件示例
+
+```python
+from typing import Any, Dict
+from .base_tool import BaseTool, ToolDefinition
+from .cache import SearchResultCache
+import httpx
+
+class WeatherTool(BaseTool):
+    
+    def __init__(self):
+        self.api_key = None
+        self._cache = SearchResultCache(max_size=500, ttl=1800)
+    
+    def initialize(self, vector_store=None):
+        self.api_key = "your_api_key_here"
+    
+    @property
+    def definition(self) -> ToolDefinition:
+        return ToolDefinition(
+            name="weather",
+            display_name="天气查询",
+            description="查询指定城市的实时天气信息",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "city": {
+                        "type": "string",
+                        "description": "城市名称（如：北京、上海）"
+                    },
+                    "units": {
+                        "type": "string",
+                        "description": "温度单位（celsius 或 fahrenheit）",
+                        "enum": ["celsius", "fahrenheit"],
+                        "default": "celsius"
+                    }
+                },
+                "required": ["city"]
+            }
+        )
+    
+    async def execute(self, **kwargs) -> str:
+        try:
+            self.validate_parameters(kwargs)
+            
+            city = kwargs.get("city")
+            units = kwargs.get("units", "celsius")
+            
+            cache_key = f"{city}:{units}"
+            cached = self._cache.get(cache_key)
+            if cached:
+                return f"（缓存）{cached}"
+            
+            async with httpx.AsyncClient() as client:
+                params = {
+                    "city": city,
+                    "units": units,
+                    "key": self.api_key
+                }
+                response = await client.get(f"https://api.weather.com/v1/current", params=params)
+                response.raise_for_status()
+                data = response.json()
+            
+            temperature = data.get("temp", "未知")
+            condition = data.get("condition", "未知")
+            humidity = data.get("humidity", "未知")
+            
+            result = f"{city} 当前天气：\n温度：{temperature}°{'C' if units == 'celsius' else 'F'}\n天气：{condition}\n湿度：{humidity}%"
+            
+            self._cache.set(cache_key, result)
+            
+            return result
+            
+        except httpx.HTTPStatusError as e:
+            return f"天气查询失败：HTTP {e.response.status_code}"
+        except Exception as e:
+            return f"天气查询过程中发生错误：{str(e)}"
+```
+
+## 相关文档
+
+- [插件开发指南](/plugins/guide) - 完整的开发指南
+- [示例插件](/plugins/examples) - 更多插件示例

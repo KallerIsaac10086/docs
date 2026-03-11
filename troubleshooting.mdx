@@ -1,0 +1,341 @@
+---
+title: "故障排查"
+description: "LawChat 故障排查指南"
+---
+
+## 后端故障排查
+
+### 服务无法启动
+
+#### 检查端口占用
+
+```bash
+lsof -i :7878
+```
+
+如果端口被占用，可以：
+1. 停止占用端口的进程
+2. 修改后端端口配置
+
+#### 检查 Python 版本
+
+```bash
+python --version
+```
+
+确保版本为 3.12+。
+
+#### 检查依赖安装
+
+```bash
+pip list
+```
+
+确保所有依赖都已安装。
+
+#### 查看启动日志
+
+```bash
+python main.py 2>&1 | tee backend.log
+```
+
+### 数据库连接失败
+
+#### 检查数据库服务
+
+```bash
+sudo systemctl status postgresql
+```
+
+#### 检查连接参数
+
+```bash
+echo $DB_TYPE
+echo $DB_HOST
+echo $DB_PORT
+echo $DB_USER
+echo $DB_NAME
+```
+
+#### 测试数据库连接
+
+```bash
+python -c "from database import engine; print(engine.connect())"
+```
+
+### 模型调用失败
+
+#### 检查模型配置
+
+```bash
+cat backend/api/models/models.json
+```
+
+#### 测试模型 API
+
+```bash
+curl -X POST http://your-model-server/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "your-model",
+    "messages": [{"role": "user", "content": "test"}]
+  }'
+```
+
+#### 查看后端日志
+
+```bash
+tail -f backend.log
+```
+
+## 前端故障排查
+
+### 开发服务器无法启动
+
+#### 检查端口占用
+
+```bash
+lsof -i :6006
+```
+
+#### 检查 Node.js 版本
+
+```bash
+node --version
+```
+
+确保版本为 18+。
+
+#### 检查依赖安装
+
+```bash
+npm list
+```
+
+#### 清理缓存
+
+```bash
+rm -rf node_modules .svelte-kit
+npm install
+```
+
+### API 请求失败
+
+#### 检查后端服务
+
+```bash
+curl http://localhost:7878/
+```
+
+#### 检查网络连接
+
+```bash
+ping localhost
+```
+
+#### 检查 CORS 配置
+
+查看后端 `main.py` 中的 CORS 配置。
+
+#### 查看浏览器控制台
+
+打开浏览器开发者工具，查看网络请求和错误信息。
+
+### 构建失败
+
+#### 清理构建缓存
+
+```bash
+rm -rf .svelte-kit build
+npm run build
+```
+
+#### 检查 TypeScript 错误
+
+```bash
+npm run check
+```
+
+#### 检查 ESLint 错误
+
+```bash
+npm run lint
+```
+
+## 部署故障排查
+
+### Docker 容器无法启动
+
+#### 查看容器日志
+
+```bash
+docker logs lawchat-backend
+```
+
+#### 检查容器状态
+
+```bash
+docker ps -a
+```
+
+#### 重新构建镜像
+
+```bash
+docker build -t lawchat-backend .
+```
+
+### Nginx 配置错误
+
+#### 测试配置文件
+
+```bash
+sudo nginx -t
+```
+
+#### 查看错误日志
+
+```bash
+sudo tail -f /var/log/nginx/error.log
+```
+
+#### 重启 Nginx
+
+```bash
+sudo systemctl restart nginx
+```
+
+### SSL 证书问题
+
+#### 检查证书有效期
+
+```bash
+sudo certbot certificates
+```
+
+#### 重新获取证书
+
+```bash
+sudo certbot renew --force-renewal
+```
+
+## 性能问题排查
+
+### 响应速度慢
+
+#### 使用性能分析工具
+
+```bash
+npm install -g lighthouse
+lighthouse http://localhost:6006 --view
+```
+
+#### 检查数据库查询
+
+```bash
+# 启用慢查询日志
+# 分析慢查询日志
+```
+
+#### 检查网络延迟
+
+```bash
+ping your-backend-url
+```
+
+### 内存占用过高
+
+#### 查看内存使用
+
+```bash
+htop
+```
+
+#### 检查内存泄漏
+
+```bash
+# 使用内存分析工具
+# 检查对象引用
+```
+
+## 日志分析
+
+### 后端日志
+
+#### 查看实时日志
+
+```bash
+tail -f backend.log
+```
+
+#### 搜索错误日志
+
+```bash
+grep ERROR backend.log
+```
+
+#### 搜索特定关键词
+
+```bash
+grep "database" backend.log
+```
+
+### 前端日志
+
+#### 查看浏览器控制台
+
+打开浏览器开发者工具，查看 Console 标签。
+
+#### 查看网络请求
+
+打开浏览器开发者工具，查看 Network 标签。
+
+## 常用错误代码
+
+| 错误代码 | 说明 | 解决方案 |
+|----------|------|----------|
+| 401 | 未授权 | 检查登录状态和 Token |
+| 403 | 禁止访问 | 检查权限配置 |
+| 404 | 资源不存在 | 检查 URL 和资源路径 |
+| 500 | 服务器内部错误 | 查看服务器日志 |
+| 502 | 网关错误 | 检查后端服务状态 |
+| 503 | 服务不可用 | 检查后端服务负载 |
+| 504 | 网关超时 | 检查网络连接和超时设置 |
+
+## 获取帮助
+
+如果以上方法无法解决问题：
+
+1. 查看 [FAQ](/faq) 文档
+2. 查看项目 GitHub Issues
+3. 提交新的 Issue
+4. 联系技术支持
+
+## 调试技巧
+
+### 启用详细日志
+
+```bash
+export LOG_LEVEL=DEBUG
+python main.py
+```
+
+### 使用断点调试
+
+```python
+import pdb
+pdb.set_trace()
+```
+
+### 使用性能分析
+
+```bash
+python -m cProfile -o profile.stats main.py
+python -m pstats profile.stats
+```
+
+### 使用内存分析
+
+```bash
+python -m memory_profiler main.py
+```

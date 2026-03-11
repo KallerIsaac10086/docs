@@ -1,0 +1,255 @@
+---
+title: "数据分析"
+description: "LawChat 数据分析功能"
+---
+
+## 概述
+
+数据分析模块提供系统使用情况的统计和分析功能。
+
+## 用户统计
+
+### 用户增长趋势
+
+```bash
+curl -X GET http://localhost:7878/manage/analytics/users/growth \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "data": [
+    {
+      "date": "2024-01-01",
+      "total_users": 100,
+      "new_users": 10,
+      "active_users": 80
+    },
+    {
+      "date": "2024-01-02",
+      "total_users": 110,
+      "new_users": 10,
+      "active_users": 85
+    }
+  ]
+}
+```
+
+### 用户分布
+
+```bash
+curl -X GET http://localhost:7878/manage/analytics/users/distribution \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "by_tier": {
+    "free": 50,
+    "pro": 40,
+    "max": 10
+  },
+  "by_status": {
+    "normal": 95,
+    "disabled": 5
+  }
+}
+```
+
+## 用量统计
+
+### Token 使用统计
+
+```bash
+curl -X GET http://localhost:7878/manage/analytics/usage/tokens \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "data": [
+    {
+      "date": "2024-01-01",
+      "total_tokens": 100000,
+      "input_tokens": 50000,
+      "output_tokens": 50000
+    }
+  ],
+  "summary": {
+    "total_tokens": 3000000,
+    "avg_daily_tokens": 100000
+  }
+}
+```
+
+### 对话次数统计
+
+```bash
+curl -X GET http://localhost:7878/manage/analytics/usage/chats \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "data": [
+    {
+      "date": "2024-01-01",
+      "total_chats": 500,
+      "unique_users": 80
+    }
+  ]
+}
+```
+
+## 收入统计
+
+### 订阅收入
+
+```bash
+curl -X GET http://localhost:7878/manage/analytics/revenue/subscriptions \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "data": [
+    {
+      "date": "2024-01-01",
+      "new_subscriptions": 5,
+      "renewals": 20,
+      "revenue": 299.00
+    }
+  ],
+  "summary": {
+    "total_revenue": 8970.00,
+    "avg_daily_revenue": 299.00
+  }
+}
+```
+
+### 资源包收入
+
+```bash
+curl -X GET http://localhost:7878/manage/analytics/revenue/packs \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "data": [
+    {
+      "date": "2024-01-01",
+      "pack_sales": 10,
+      "revenue": 99.00
+    }
+  ]
+}
+```
+
+## 交易统计
+
+### 交易记录
+
+```bash
+curl -X GET http://localhost:7878/manage/analytics/transactions \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "transactions": [
+    {
+      "id": 123,
+      "user_id": 1,
+      "amount": 29.9,
+      "status": "completed",
+      "type": "subscription",
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "summary": {
+    "total_transactions": 100,
+    "total_amount": 2990.00,
+    "success_rate": 0.95
+  }
+}
+```
+
+## 模型使用统计
+
+### 模型调用统计
+
+```bash
+curl -X GET http://localhost:7878/manage/analytics/models/usage \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "data": [
+    {
+      "model_id": "model-1",
+      "model_name": "LexJade 民法",
+      "call_count": 5000,
+      "token_count": 2500000
+    }
+  ]
+}
+```
+
+## 时间范围
+
+### 查询参数
+
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| start_date | 开始日期 | 2024-01-01 |
+| end_date | 结束日期 | 2024-01-31 |
+| period | 时间周期 | daily/weekly/monthly |
+
+### 示例查询
+
+```bash
+curl -X GET "http://localhost:7878/manage/analytics/users/growth?start_date=2024-01-01&end_date=2024-01-31&period=daily" \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+## 导出数据
+
+### 导出为 CSV
+
+```bash
+curl -X GET "http://localhost:7878/manage/analytics/export?format=csv" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -o analytics.csv
+```
+
+### 导出为 JSON
+
+```bash
+curl -X GET "http://localhost:7878/manage/analytics/export?format=json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -o analytics.json
+```
+
+## 相关文档
+
+- [管理后台](/admin/overview) - 管理后台介绍
+- [用户管理](/admin/users) - 用户管理
+- [工具管理](/admin/tools) - 工具管理

@@ -1,0 +1,238 @@
+---
+title: "工具管理"
+description: "LawChat 工具管理功能"
+---
+
+## 工具列表
+
+### 查看所有工具
+
+```bash
+curl -X GET http://localhost:7878/api/tools/admin/list \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "tools": [
+    {
+      "id": 1,
+      "name": "case_law_search",
+      "display_name": "法律案例检索",
+      "description": "检索法律案例库中的相关案例",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "检索关键词或自然语言描述"
+          },
+          "domain_filter": {
+            "type": "string",
+            "description": "领域筛选",
+            "enum": ["刑事", "民事", "行政"]
+          }
+        },
+        "required": ["query"]
+      },
+{
+      "is_enabled": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+## 工具字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | integer | 工具ID |
+| name | string | 工具唯一标识符 |
+| display_name | string | 工具显示名称 |
+| description | string | 工具描述 |
+| parameters | object | 参数定义（JSON Schema） |
+| is_enabled | boolean | 是否启用 |
+| created_at | timestamp | 创建时间 |
+| updated_at | timestamp | 更新时间 |
+
+## 工具操作
+
+### 启用工具
+
+```bash
+curl -X POST http://localhost:7878/api/tools/admin/{tool_name}/enable \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "message": "工具 case_law_search 已启用",
+  "tool": {
+    "name": "case_law_search",
+    "is_enabled": true
+  }
+}
+```
+
+### 禁用工具
+
+```bash
+curl -X POST http://localhost:7878/api/tools/admin/{tool_name}/disable \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "message": "工具 case_law_search 已禁用",
+  "tool": {
+    "name": "case_law_search",
+    "is_enabled": false
+  }
+}
+```
+
+## 工具状态
+
+| 状态 | 说明 |
+|------|------|
+| enabled | 已启用（用户可以使用） |
+| disabled | 已禁用（用户无法使用） |
+
+## 工具参数
+
+### 参数类型
+
+| 类型 | 说明 |
+|------|------|
+| string | 字符串 |
+| integer | 整数 |
+| number | 浮点数 |
+| boolean | 布尔值 |
+| array | 数组 |
+| object | 对象 |
+
+### 参数示例
+
+#### 字符串参数
+
+```json
+{
+  "type": "string",
+  "description": "查询内容"
+}
+```
+
+#### 枚举参数
+
+```json
+{
+  "type": "string",
+  "description": "领域筛选",
+  "enum": ["刑事", "民事", "行政"]
+}
+```
+
+#### 数组参数
+
+```json
+{
+  "type": "array",
+  "description": "标签列表",
+  "items": {
+    "type": "string"
+  }
+}
+```
+
+#### 对象参数
+
+```json
+{
+  "type": "object",
+  "description": "地理位置",
+  "properties": {
+    "latitude": {"type": "number"},
+    "longitude": {"type": "number"}
+  },
+  "required": ["latitude", "longitude"]
+}
+```
+
+## 工具搜索
+
+### 按名称搜索
+
+```bash
+curl -X GET "http://localhost:7878/api/tools/admin/list?search=法律" \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 按状态筛选
+
+```bash
+curl -X GET "http://localhost:7878/api/tools/admin/list?enabled=true" \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+## 批量操作
+
+### 批量启用工具
+
+```bash
+curl -X POST http://localhost:7878/api/tools/admin/batch-enable \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "tool_names": ["case_law_search", "get_case_details"]
+  }'
+```
+
+### 批量禁用工具
+
+```bash
+curl -X POST http://localhost:7878/api/tools/admin/batch-disable \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "tool_names": ["case_law_search", "get_case_details"]
+  }'
+```
+
+## 工具调用统计
+
+### 查看工具调用统计
+
+```bash
+curl -X GET http://localhost:7878/api/tools/admin/stats \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "stats": [
+    {
+      "tool_name": "case_law_search",
+      "call_count": 1500,
+      "success_count": 1450,
+      "error_count": 50,
+      "avg_duration": 0.5
+    }
+  ]
+}
+```
+
+## 相关文档
+
+- [管理后台](/admin/overview) - 管理后台介绍
+- [用户管理](/admin/users) - 用户管理
+- [数据分析](/admin/analytics) - 数据分析

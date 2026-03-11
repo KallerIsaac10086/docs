@@ -1,0 +1,207 @@
+---
+title: "数据库设计"
+description: "LawChat 数据库表结构设计"
+---
+
+## 核心表结构
+
+### users (用户表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 用户ID（主键） |
+| username | TEXT | 用户名 |
+| email | TEXT | 邮箱 |
+| phone | TEXT | 手机号 |
+| hashed_password | TEXT | 加密密码 |
+| status | TEXT | 状态 (normal/disabled/suspended/pending) |
+| member_tier | TEXT | 会员等级 (free/pro/max) |
+| member_expires_at | TIMESTAMP | 会员过期时间 |
+| balance | DECIMAL | 账户余额 |
+| storage_limit | INTEGER | 存储限制 |
+| daily_limit_input | INTEGER | 每日输入Token限制 |
+| daily_limit_output | INTEGER | 每日输出Token限制 |
+| daily_chat_limit | INTEGER | 每日对话限制 |
+| total_chat_limit | INTEGER | 总对话限制 |
+| daily_request_limit | INTEGER | 每日请求限制 |
+| total_request_limit | INTEGER | 总请求限制 |
+| subscription_id | INTEGER | 订阅ID（外键） |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### membership_plans (会员套餐表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 套餐ID（主键） |
+| name | TEXT | 套餐名称 |
+| tier | TEXT | 等级 (free/pro/max) |
+| price | DECIMAL | 价格 |
+| duration_days | INTEGER | 有效期（天） |
+| subscription_type | TEXT | 订阅类型 (one_time/recurring_monthly/recurring_yearly) |
+| daily_chat_limit | INTEGER | 每日对话限制 |
+| free_model_daily_limit | INTEGER | 免费模型每日限制 |
+| free_model_monthly_limit | INTEGER | 免费模型每月限制 |
+| pro_model_daily_limit | INTEGER | Pro模型每日限制 |
+| pro_model_monthly_limit | INTEGER | Pro模型每月限制 |
+| max_model_daily_limit | INTEGER | Max模型每日限制 |
+| max_model_monthly_limit | INTEGER | Max模型每月限制 |
+| included_resource_products | JSON | 包含的资源包产品 |
+| is_active | BOOLEAN | 是否启用 |
+| sort_order | INTEGER | 排序顺序 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### resource_products (资源产品表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 产品ID（主键） |
+| name | TEXT | 产品名称 |
+| pack_type | TEXT | 包类型 |
+| resource_type | TEXT | 资源类型 |
+| amount | INTEGER | 数量 |
+| reset_period | TEXT | 重置周期 |
+| allowed_models | JSON | 允许的模型列表 |
+| price | DECIMAL | 价格 |
+| is_active | BOOLEAN | 是否启用 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### user_resource_packs (用户资源包表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 包ID（主键） |
+| user_id | INTEGER | 用户ID（外键） |
+| name | TEXT | 包名称 |
+| type | TEXT | 包类型 |
+| resource_type | TEXT | 资源类型 |
+| amount | INTEGER | 数量 |
+| used | INTEGER | 已用量 |
+| expires_at | TIMESTAMP | 过期时间 |
+| status | TEXT | 状态 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### payment_transactions (支付交易表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 交易ID（主键） |
+| user_id | INTEGER | 用户ID（外键） |
+| plan_id | INTEGER | 套餐ID（外键） |
+| product_id | INTEGER | 产品ID（外键） |
+| amount | DECIMAL | 金额 |
+| status | TEXT | 状态 (pending/completed/failed/refunded) |
+| gateway | TEXT | 支付网关 |
+| gateway_order_id | TEXT | 网关订单号 |
+| items | JSON | 购买项 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### user_subscriptions (用户订阅表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 订阅ID（主键） |
+| user_id | INTEGER | 用户ID（外键） |
+| plan_id | INTEGER | 套餐ID（外键） |
+| status | TEXT | 状态 |
+| next_billing_date | TIMESTAMP | 下次扣费日期 |
+| billing_cycle | TEXT | 计费周期 |
+| payment_method | TEXT | 支付方式 |
+| auto_renew | BOOLEAN | 自动续费 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### vouchers (代金券表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 代金券ID（主键） |
+| code | TEXT | 兑换码 |
+| type | TEXT | 类型 |
+| amount | DECIMAL | 金额 |
+| expires_at | TIMESTAMP | 过期时间 |
+| usage_limit | INTEGER | 使用次数限制 |
+| used_count | INTEGER | 已使用次数 |
+| is_active | BOOLEAN | 是否启用 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### cloud_chats (云端对话表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 对话ID（主键） |
+| user_id | INTEGER | 用户ID（外键） |
+| title | TEXT | 标题 |
+| messages | JSON | 消息列表 |
+| token_count | INTEGER | Token数量 |
+| updated_at | TIMESTAMP | 更新时间 |
+| hash | TEXT | 内容哈希 |
+
+### private_chats (私有对话表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 对话ID（主键） |
+| user_id | INTEGER | 用户ID（外键） |
+| title | TEXT | 标题 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### private_messages (私有消息表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 消息ID（主键） |
+| chat_id | INTEGER | 对话ID（外键） |
+| role | TEXT | 角色 (user/assistant) |
+| content | TEXT | 内容 |
+| created_at | TIMESTAMP | 创建时间 |
+
+### usage_stats (用量统计表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 统计ID（主键） |
+| user_id | INTEGER | 用户ID（外键） |
+| device_name | TEXT | 设备名 |
+| tokens_generated | INTEGER | 生成Token数 |
+| request_count | INTEGER | 请求次数 |
+| daily_tokens_generated | INTEGER | 每日生成Token |
+| daily_input_tokens | INTEGER | 每日输入Token |
+| last_reset_date | DATE | 最后重置日期 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+### tools (工具表)
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 工具ID（主键） |
+| name | TEXT | 工具唯一标识符 |
+| display_name | TEXT | 工具显示名称 |
+| description | TEXT | 工具描述 |
+| parameters | JSON | 参数定义 |
+| is_enabled | BOOLEAN | 是否启用 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+
+## ER 图
+
+```
+users ──┬──> user_subscriptions
+        ├──> payment_transactions
+        ├──> user_resource_packs
+        ├──> cloud_chats
+        ├──> private_chats ──> private_messages
+        └──> usage_stats
+
+membership_plans ──> user_subscriptions
+resource_products ──> user_resource_packs
+vouchers
+tools
+```

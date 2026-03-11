@@ -1,0 +1,286 @@
+---
+title: "组件库"
+description: "LawChat 前端组件库说明"
+---
+
+## UI 组件 (ui/)
+
+### Button 按钮
+
+```svelte
+<script lang="ts">
+  import { Button } from '$lib/components/ui/button';
+</script>
+
+<Button variant="default">默认按钮</Button>
+<Button variant="outline">边框按钮</Button>
+<Button variant="destructive">危险按钮</Button>
+<Button variant="ghost">幽灵按钮</Button>
+<Button variant="secondary">次要按钮</Button>
+<Button disabled>禁用按钮</Button>
+```
+
+### Card 卡片
+
+```svelte
+<script lang="ts">
+  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '$lib/components/ui/card';
+</script>
+
+<Card>
+  <CardHeader>
+    <CardTitle>卡片标题</CardTitle>
+    <CardDescription>卡片描述</CardDescription>
+  </CardHeader>
+  <CardContent>
+    卡片内容
+  </CardContent>
+</Card>
+```
+
+### Dialog 对话框
+
+```svelte
+<script lang="ts">
+  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '$lib/components/ui/dialog';
+  import { Button } from '$lib/components/ui/button';
+
+  let open = false;
+</script>
+
+<Button onclick={() => open = true}>打开对话框</Button>
+
+<Dialog bind:open>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>对话框标题</DialogTitle>
+      <DialogDescription>对话框描述</DialogDescription>
+    </DialogHeader>
+    <div>对话框内容</div>
+    <DialogFooter>
+      <Button variant="outline" onclick={() => open = false}>取消</Button>
+      <Button onclick={() => open = false}>确定</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+### Input 输入框
+
+```svelte
+<script lang="ts">
+  import { Input } from '$lib/components/ui/input';
+  import { Label } from '$lib/components/ui/label';
+
+  let value = '';
+</script>
+
+<div class="space-y-2">
+  <Label for="input">标签</Label>
+  <Input id="input" bind:value placeholder="请输入..." />
+</div>
+```
+
+### Textarea 文本域
+
+```svelte
+<script lang="ts">
+  import { Textarea } from '$lib/components/ui/textarea';
+  import { Label } from '$lib/components/ui/label';
+
+  let value = '';
+</script>
+
+<div class="space-y-2">
+  <Label for="textarea">标签</Label>
+  <Textarea id="textarea" bind:value placeholder="请输入..." rows={4} />
+</div>
+```
+
+### Select 选择器
+
+```svelte
+<script lang="ts">
+  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '$lib/components/ui/select';
+
+  let value = '';
+</script>
+
+<Select bind:value>
+  <SelectTrigger>
+    <SelectValue placeholder="请选择" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="option1">选项 1</SelectItem>
+    <SelectItem value="option2">选项 2</SelectItem>
+    <SelectItem value="option3">选项 3</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+### Switch 开关
+
+```svelte
+<script lang="ts">
+  import { Switch } from '$lib/components/ui/switch';
+  import { Label } from '$lib/components/ui/label';
+
+  let checked = false;
+</script>
+
+<div class="flex items-center gap-2">
+  <Switch id="switch" bind:checked />
+  <Label for="switch">开关标签</Label>
+</div>
+```
+
+### Badge 徽章
+
+```svelte
+<script lang="ts">
+  import { Badge } from '$lib/components/ui/badge';
+</script>
+
+<Badge variant="default">默认</Badge>
+<Badge variant="secondary">次要</Badge>
+<Badge variant="outline">边框</Badge>
+<Badge variant="destructive">危险</Badge>
+```
+
+### Alert 提示
+
+```svelte
+<script lang="ts">
+  import { Alert, AlertTitle, AlertDescription } from '$lib/components/ui/alert';
+</script>
+
+<Alert>
+  <AlertTitle>提示标题</AlertTitle>
+  <AlertDescription>提示描述</AlertDescription>
+</Alert>
+
+<Alert variant="destructive">
+  <AlertTitle>错误标题</AlertTitle>
+  <AlertDescription>错误描述</AlertDescription>
+</Alert>
+```
+
+### Table 表格
+
+```svelte
+<script lang="ts">
+  import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '$lib/components/ui/table';
+</script>
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>表头 1</TableHead>
+      <TableHead>表头 2</TableHead>
+      <TableHead>表头 3</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>数据 1</TableCell>
+      <TableCell>数据 2</TableCell>
+      <TableCell>数据 3</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+```
+
+### Tooltip 提示框
+
+```svelte
+<script lang="ts">
+  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '$lib/components/ui/tooltip';
+  import { Button } from '$lib/components/ui/button';
+</script>
+
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button>悬停我</Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      这是提示内容
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+```
+
+### DropdownMenu 下拉菜单
+
+```svelte
+<script lang="ts">
+  import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '$lib/components/ui/dropdown-menu';
+  import { Button } from '$lib/components/ui/button';
+</script>
+
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button>打开菜单</Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    <DropdownMenuItem>选项 1</DropdownMenuItem>
+    <DropdownMenuItem>选项 2</DropdownMenuItem>
+    <DropdownMenuItem>选项 3</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+## 应用组件 (app/)
+
+### ChatForm 聊天表单
+
+```svelte
+<script lang="ts">
+  import { ChatForm } from '$lib/components/app';
+</script>
+
+<ChatForm on:send={(e) => console.log(e.detail.message)} />
+```
+
+### ChatMessage 聊天消息
+
+```svelte
+<script lang="ts">
+  import { ChatMessage } from '$lib/components/app';
+</script>
+
+<ChatMessage role="user" content="用户消息" />
+<ChatMessage role="assistant" content="助手消息" />
+```
+
+### ConversationList 对话列表
+
+```svelte
+<script lang="ts">
+  import { ConversationList } from '$lib/components/app';
+</script>
+
+<ConversationList conversations={[]} on:select={(e) => console.log(e.detail.id)} />
+```
+
+### ModelSelector 模型选择器
+
+```svelte
+<script lang="ts">
+  import { ModelSelector } from '$lib/components/app';
+</script>
+
+<ModelSelector models={[]} bind:selectedModel />
+```
+
+## 更多组件
+
+查看完整的组件库：
+- Popover - 弹出框
+- Sheet - 侧边栏
+- Progress - 进度条
+- Skeleton - 骨架屏
+- Checkbox - 复选框
+- Radio - 单选框
+- Slider - 滑块
+- Sidebar - 侧边栏

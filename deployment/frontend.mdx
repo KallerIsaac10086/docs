@@ -1,0 +1,291 @@
+---
+title: "前端部署"
+description: "LawChat 前端部署指南"
+---
+
+## 环境要求
+
+- Node.js 18+
+- npm 或 pnpm
+- 2GB+ 内存
+- 5GB+ 磁盘空间
+
+## 安装步骤
+
+### 1. 克隆项目
+
+```bash
+git clone <repository-url>
+cd llama-python-webui/frontend
+```
+
+### 2. 安装依赖
+
+```bash
+npm install
+```
+
+或使用 pnpm：
+
+```bash
+pnpm install
+```
+
+### 3. 配置环境变量
+
+创建 `.env` 文件：
+
+```env
+VITE_API_URL=http://your-backend-url:7878
+VITE_APP_NAME=LawChat
+```
+
+### 4. 构建生产版本
+
+```bash
+npm run build
+```
+
+构建产物位于 `build/` 目录。
+
+### 5. 预览构建结果
+
+```bash
+npm run preview
+```
+
+## 静态部署
+
+### 使用 Nginx
+
+#### 配置文件
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    root /path/to/frontend/build;
+
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://localhost:7878;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+ gzip  on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+}
+```
+
+#### 重启 Nginx
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 使用 Apache
+
+#### 配置文件
+
+```apache
+<VirtualHost *:80>
+    ServerName your-domain.com
+    DocumentRoot /path/to/frontend/build
+
+    <Directory /path/to/frontend/build>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ /index.html [L]
+
+    ProxyPass /api http://localhost:7878
+    ProxyPassReverse /api http://localhost:7878
+</VirtualHost>
+```
+
+### 使用 Vercel
+
+#### 安装 Vercel CLI
+
+```bash
+npm install -g vercel
+```
+
+#### 部署
+
+```bash
+vercel --prod
+```
+
+### 使用 Netlify
+
+#### 安装 Netlify CLI
+
+```bash
+npm install -g netlify-cli
+```
+
+#### 部署
+
+```bash
+netlify deploy --prod --dir=build
+```
+
+## Docker 部署
+
+### 创建 Dockerfile
+
+```dockerfile
+FROM node:18-alpine as builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine
+
+COPY --from=builder /app/build /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### 构建镜像
+
+```bash
+docker build -t lawchat-frontend .
+```
+
+### 运行容器
+
+```bash
+docker run -d \
+  --name lawchat-frontend \
+  -p 80:80 \
+  lawchat-frontend
+```
+
+### 使用 Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  frontend:
+    build: .
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  backend:
+    image: lawchat-backend
+    ports:
+      - "7878:7878"
+```
+
+## 性能优化
+
+### 1. 启用压缩
+
+在 `vite.config.ts` 中配置：
+
+```typescript
+export default defineConfig({
+  build: {
+    minify: 'terser',
+    terserOptions: {
+      compress: true
+    }
+  }
+})
+```
+
+### 2. 代码分割
+
+SvelteKit 自动进行代码分割。
+
+### 3. 图片优化
+
+使用 WebP 格式：
+
+```bash
+npm install -g imagemin-cli
+```
+
+### 4. CDN 加速
+
+将静态资源上传到 CDN。
+
+## 环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| VITE_API_URL | 后端 API 地址 | http://localhost:7878 |
+| VITE_APP_NAME | 应用名称 | LawChat |
+
+## 监控
+
+### 1. 查看构建日志
+
+```bash
+npm run build -- --mode production
+```
+
+### 2. 检查构建大小
+
+```bash
+du -sh build/
+```
+
+### 3. 性能分析
+
+使用 Lighthouse：
+
+```bash
+npm install -g lighthouse
+lighthouse http://your-domain.com --view
+```
+
+## 故障排查
+
+### 构建失败
+
+```bash
+rm -rf node_modules .svelte-kit
+npm install
+npm run build
+```
+
+### 路由问题
+
+检查 `vite.config.ts` 中的 `base` 配置。
+
+### API 请求失败
+
+检查：
+1. 后端服务是否运行
+2. CORS 配置是否正确
+3. 网络连接是否正常
+
+## 相关文档
+
+- [后端部署](**/deployment/backend**) - 后端部署指南
+- [移动端部署](**/deployment/mobile**) - 移动端部署指南

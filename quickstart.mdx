@@ -1,80 +1,144 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "快速开始"
+description: "在几分钟内启动 LawChat"
 ---
 
-## Get started in three steps
+## 环境准备
 
-Get your documentation site running locally and make your first customization.
+在开始之前，请确保你已经安装了以下工具：
 
-### Step 1: Set up your local environment
+### 必需软件
+- **Python 3.12+** - 后端运行环境
+- **Node.js 18+** - 前端运行环境
+- **npm 或 pnpm** - 包管理器
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+### 可选软件
+- **PostgreSQL** - 生产环境数据库（默认使用 SQLite）
+- **Xcode 15+** - iOS 开发（macOS）
+- **Android Studio** - Android 开发
 
-### Step 2: Deploy your changes
+## 第一步：克隆项目
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+```bash
+git clone <repository-url>
+cd llama-python-webui
+```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## 第二步：启动后端
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+### 1. 进入后端目录
+```bash
+cd backend
+```
 
-### Step 3: Go live
+### 2. 创建虚拟环境（推荐）
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
+```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+### 3. 安装依赖
+```bash
+pip install -r requirements.txt
+```
 
-## Next steps
+### 4. 初始化数据库
+```bash
+python init_db.py
+```
 
-Now that you have your docs running, explore these key features:
+### 5. 配置模型
+编辑 `backend/api/models/models.json`，添加你的模型配置：
 
-<CardGroup cols={2}>
+```json
+{
+  "providers": {
+    "YourProvider": {
+      "type": "openai",
+      "base_url": "http://your-model-server/v1",
+      "api_key": "your-api-key",
+      "models": ["your-model-name"],
+      "ability": {
+        "think": "dynamic",
+        "vision": false
+      },
+      "model_info": {
+        "your-model-name": {
+          "id": "unique-uuid",
+          "display_name": "你的模型",
+          "developer": "你的开发者",
+          "tier": "free",
+          "max_context": "32k",
+          "system_prompt": "系统提示词",
+          "default_params": {
+            "temperature": 0.7,
+            "max_tokens": 4096
+          },
+          "status": "active"
+        }
+      }
+    }
+  }
+}
+```
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+### 6. 启动后端服务
+```bash
+python main.py
+```
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+或使用 uvicorn：
+```bash
+uvicorn main:app --host 0.0.0.0 --port 7878 --reload
+```
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+后端服务将在 `http://localhost:7878` 启动。
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+## 第三步：启动前端
 
-</CardGroup>
+### 1. 进入前端目录
+```bash
+cd frontend
+```
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+### 2. 安装依赖
+```bash
+npm install
+```
+
+### 3. 启动开发服务器
+```bash
+npm run dev
+```
+
+前端服务将在 `http://localhost:6006` 启动。
+
+## 第四步：验证安装
+
+### 1. 访问前端
+打开浏览器访问 `http://localhost:6006`
+
+### 2. 访问后端 API 文档
+打开浏览器访问 `http://localhost:7878/docs` 查看 Swagger UI
+
+### 3. 注册账户
+在前端页面注册一个测试账户
+
+### 4. 开始聊天
+选择一个模型，开始与 AI 对话
+
+## 默认账户
+
+### 管理员账户
+- 用户名: `admin`
+- 密码: `admin`
+
+**重要**: 首次登录后请立即修改管理员密码！
+
+## 下一步
+
+- 阅读 [项目架构](/architecture) 了解项目结构
+- 查看 [后端开发](/backend/architecture) 进行后端开发
+- 查看 [前端开发](/frontend/architecture) 进行前端开发
+- 学习 [插件开发](/plugins/guide) 扩展功能

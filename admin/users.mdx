@@ -1,0 +1,210 @@
+---
+title: "用户管理"
+description: "LawChat 用户管理功能"
+---
+
+## 用户列表
+
+### 查看所有用户
+
+```bash
+curl -X GET http://localhost:7878/manage/users/ \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "user1",
+      "email": "user1@example.com",
+      "phone": "13800138000",
+      "status": "normal",
+      "member_tier": "pro",
+      "member_expires_at": "2024-12-31T23:59:59Z",
+      "balance": 100.00,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 20
+}
+```
+
+## 用户详情
+
+### 获取单个用户
+
+```bash
+curl -X GET http://localhost:7878/manage/users/{user_id} \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 用户字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | integer | 用户ID |
+| username | string | 用户名 |
+| email | string | 邮箱 |
+| phone | string | 手机号 |
+| status | string | 状态 (normal/disabled/suspended/pending) |
+| member_tier | string | 会员等级 (free/pro/max) |
+| member_expires_at | timestamp | 会员过期时间 |
+| balance | decimal | 账户余额 |
+| storage_limit | integer | 存储限制 |
+| daily_limit_input | integer | 每日输入Token限制 |
+| daily_limit_output | integer | 每日输出Token限制 |
+| daily_chat_limit | integer | 每日对话限制 |
+| total_chat_limit | integer | 总对话限制 |
+| daily_request_limit | integer | 每日请求限制 |
+| total_request_limit | integer | 总请求限制 |
+| subscription_id | integer | 订阅ID |
+| created_at | timestamp | 创建时间 |
+| updated_at | timestamp | 更新时间 |
+
+## 用户操作
+
+### 更新用户信息
+
+```bash
+curl -X PUT http://localhost:7878/manage/users/{user_id} \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "username": "new_username",
+    "email": "new_email@example.com",
+    "phone": "13900139000",
+    "status": "normal"
+  }'
+```
+
+### 禁用用户
+
+```bash
+curl -X PUT http://localhost:7878/manage/users/{user_id} \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "status": "disabled"
+  }'
+```
+
+### 删除用户
+
+```bash
+curl -X DELETE http://localhost:7878/manage/users/{user_id} \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+## 用户状态
+
+| 状态 | 说明 |
+|------|------|
+| normal | 正常 |
+| disabled | 已禁用 |
+| suspended | 已暂停 |
+| pending | 待激活 |
+
+## 用户搜索
+
+### 按用户名搜索
+
+```bash
+curl -X GET "http://localhost:7878/manage/users/?search=user1" \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 按邮箱搜索
+
+```bash
+curl -X GET "http://localhost:7878/manage/users/?email=user1@example.com" \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 按会员等级筛选
+
+```bash
+curl -X GET "http://localhost:7878/manage/users/?tier=pro" \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+## 用户用量统计
+
+### 查看用户用量
+
+```bash
+curl -X GET http://localhost:7878/manage/users/{user_id}/usage \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "user_id": 1,
+  "tokens_generated": 50000,
+  "request_count": 100,
+  "daily_tokens_generated": 5000,
+  "daily_input_tokens": 2500,
+  "last_reset_date": "2024-01-15"
+}
+```
+
+## 用户订阅信息
+
+### 查看用户订阅
+
+```bash
+curl -X GET http://localhost:7878/manage/users/{user_id}/subscription \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+```
+
+### 响应示例
+
+```json
+{
+  "id": 456,
+  "user_id": 1,
+  "plan_id": 2,
+  "status": "active",
+  "next_billing_date": "2024-02-15T00:00:00Z",
+  "billing_cycle": "monthly",
+  "payment_method": "balance",
+  "auto_renew": true
+}
+```
+
+## 批量操作
+
+### 批量禁用用户
+
+```bash
+curl -X POST http://localhost:7878/manage/users/batch-disable \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "user_ids": [1, 2, 3]
+  }'
+```
+
+### 批量删除用户
+
+```bash
+curl -X POST http://localhost:7878/manage/users/batch-delete \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -d '{
+    "user_ids": [1, 2, 3]
+  }'
+```
+
+## 相关文档
+
+- [管理后台](/admin/overview) - 管理后台介绍
+- [工具管理](/admin/tools) - 工具管理
+- [数据分析](/admin/analytics) - 数据分析

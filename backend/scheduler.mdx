@@ -1,0 +1,285 @@
+---
+title: "定时任务"
+description: "LawChat 定时任务说明"
+---
+
+## 定时任务列表
+
+LawChat 内置三个定时任务，用于系统维护和自动化处理。
+
+## 1. 每日维护任务
+
+### 执行时间
+- 北京时间每天 00:00 (UTC 16:00)
+
+### 功能
+- 重置所有用户的每日用量统计
+- 检查并处理过期的会员
+- 检查并处理过期的资源包
+
+### 实现代码
+
+```python
+async def run_daily_maintenance_task():
+    while True:
+        now_utc = datetime.now(timezone.utc)
+        
+        # 目标：今天 16:00 UTC（北京时间 00:00）
+        target = now_utc.replace(hour=16, minute=0, second=0, microsecond=0)
+        
+        if now_utc >= target:
+            target += timedelta(days=1)
+            
+        seconds_until = (target - now_utc).total_seconds()
+        
+        print(f"Next daily maintenance in {seconds_until:.0f} seconds")
+        
+        await asyncio.sleep(seconds_until)
+        
+        print("Running daily maintenance task...")
+        db = SessionLocal()
+        try:
+            await asyncio.to_thread(daily_maintenance, db)
+        except Exception as e:
+            print(f"Daily maintenance failed: {e}")
+        finally:
+            db.close()
+```
+
+### daily_maintenance 函数
+
+```python
+def daily_maintenance(db):
+    """
+    每日维护任务
+    1. 重置所有用户的每日用量统计
+    2. 检查并处理过期的会员
+    3. 检查并处理过期的资源包
+    """
+    # 重置每日用量
+    today = date.today()
+    for user_stat in db.query(UsageStats).all():
+        if user_stat.last_reset_date != today:
+            user_stat.daily_tokens_generated = 0
+            user_stat.daily_input_tokens = 0
+            user_stat.last_reset_date = today
+    
+    # 处理过期会员
+    now = datetime.now()
+    for user in db.query(User).filter(User.member_expires_at < now).all():
+        if user.member_tier != "free":
+            user.member_tier = "free"
+            user.member_expires_at = None
+    
+    # 处理过期资源包
+    for pack in db.query(UserResourcePack).filter(UserResourcePack.expires_at < now).all():
+        pack.status = "expired"
+    
+    db.commit()
+```
+
+## 2. 每小时订阅扣费
+
+### 执行时间
+- 每小时执行一次
+
+### 功能
+- 处理订阅用户的自动续费扣款
+
+### 实现代码
+
+```python
+async def run_hourly_subscription_billing():
+    while True:
+        await asyncio.sleep(3600)
+        
+        print("Running hourly subscription billing...")
+        db = SessionLocal()
+        try:
+            result = await charge_subscriptions(db)
+            print(f"Hourly subscription billing completed: {result}")
+        except Exception as e:
+            print(f"Hourly subscription billing failed: {e}")
+        finally:
+            db.close()
+```
+
+### charge_subscriptions 函数
+
+```python
+async def charge_subscriptions(db):
+    """
+    处理订阅扣费
+    1. 查找需要扣费的订阅
+    2. 检查用户余额
+    3. 执行扣费
+    4. 延长会员有效期
+    5. 更新下次扣费日期
+    """
+    now = datetime.now()
+    charged_count = 0
+    
+    subscriptions = db.query(UserSubscription).filter(
+        UserSubscription.status == "active",
+        UserSubscription.next_billing_date <= now,
+        UserSubscription.auto_renew == True
+    ).all()
+    
+    for sub in subscriptions:
+        user = db.query(User).filter(User.id == sub.user_id).first()
+        plan = db.query(MembershipPlan).filter(MembershipPlan.id == sub.plan_id).first()
+        
+        if not user or not plan:
+            continue
+        
+        # 检查余额
+        if user.balance < plan.price:
+            # 余额不足，暂停订阅
+            sub.status = "paused"
+            continue
+        
+        # 扣费
+        user.balance -= plan.price
+        
+        # 创建交易记录
+        transaction = PaymentTransaction(
+            user_id=user.id,
+            plan_id=plan.id,
+            amount=plan.price,
+            status="completed",
+            gateway="balance",
+            items=[{"type": "subscription", "plan_id": plan.id}]
+        )
+        db.add(transaction)
+        
+        # 延长会员有效期
+        if user.member_expires_at and user.member_expires_at > now:
+            user.member_expires_at += timedelta(days=plan.duration_days)
+        else:
+            user.member_expires_at = now + timedelta(days=plan.duration_days)
+        
+        user.member_tier = plan.tier
+        
+        # 更新下次扣费日期
+        if sub.billing_cycle == "monthly":
+            sub.next_billing_date = now + timedelta(days=30)
+        elif sub.billing_cycle == "yearly":
+            sub.next_billing_date = now + timedelta(days=365)
+        
+        charged_count += 1
+    
+    db.commit()
+    return {"charged_count": charged_count}
+```
+
+## 3. 待处理交易清理
+
+### 执行时间
+- 每60秒执行一次
+
+### 功能
+- 清理30分钟前创建仍处于 pending 状态的支付交易
+
+### 实现代码
+
+```python
+async def run_pending_transaction_cleanup():
+    while True:
+        await asyncio.sleep(60)
+        
+        print("Running pending transaction cleanup...")
+        db = SessionLocal()
+        try:
+            await asyncio.to_thread(cleanup_expired_pending_transactions, db)
+        except Exception as e:
+            print(f"Pending transaction cleanup failed: {e}")
+        finally:
+            db.close()
+```
+
+### cleanup_expired_pending_transactions 函数
+
+```python
+def cleanup_expired_pending_transactions(db):
+    """
+    清理过期的待处理交易
+    删除30分钟前创建仍处于 pending 状态的交易
+    """
+    cutoff_time = datetime.now() - timedelta(minutes=30)
+    
+    expired_transactions = db.query(PaymentTransaction).filter(
+        PaymentTransaction.status == "pending",
+        PaymentTransaction.created_at < cutoff_time
+    ).all()
+    
+    for tx in expired_transactions:
+        tx.status = "failed"
+    
+    db.commit()
+```
+
+## 任务管理
+
+### 启动任务
+
+所有定时任务在应用启动时自动启动：
+
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ... 其他初始化 ...
+    
+    maintenance_task = asyncio.create_task(run_daily_maintenance_task())
+    billing_task = asyncio.create_task(run_hourly_subscription_billing())
+    cleanup_task = asyncio.create_task(run_pending_transaction_cleanup())
+    
+    yield
+    
+    maintenance_task.cancel()
+    billing_task.cancel()
+    cleanup_task.cancel()
+    try:
+        await maintenance_task
+        await billing_task
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
+```
+
+### 手动触发
+
+如需手动触发定时任务，可以调用相应的函数：
+
+```python
+from utils.scheduler import daily_maintenance
+from database import SessionLocal
+
+db = SessionLocal()
+try:
+    daily_maintenance(db)
+finally:
+    db.close()
+```
+
+## 监控
+
+### 日志输出
+
+所有定时任务都会输出日志：
+
+```
+Next daily maintenance in 3600 seconds
+Running daily maintenance task...
+Daily maintenance completed
+```
+
+### 错误处理
+
+任务执行失败时会记录错误但不会中断任务循环：
+
+```python
+try:
+    await asyncio.to_thread(daily_maintenance, db)
+except Exception as e:
+    print(f"Daily maintenance failed: {e}")
+```

@@ -1,0 +1,200 @@
+---
+title: "后端架构"
+description: "了解 LawChat 后端的架构设计"
+---
+
+## 目录结构
+
+```
+backend/
+├── api/                   # API 路由模块
+│   ├── auth/             # 用户认证与授权
+│   ├── chat/             # 对话服务
+│   ├── membership/       # 会员系统
+│   ├── models/           # 模型配置管理
+│   ├── files/            # 文件上传处理
+│   ├── tools/            # 工具管理
+│   ├── cloud.py          # 云端对话同步
+│   └── de_auth.py        # 认证拒绝响应
+├── manage/               # 后台管理接口
+├── services/             # 业务逻辑服务
+├── tools/                # 工具插件
+├── utils/                # 工具类
+├── main.py               # 应用入口
+├── database.py           # 数据库配置
+├── models_db.py          # 数据库模型
+└── init_db.py            # 数据库初始化
+```
+
+## 应用入口 (main.py)
+
+### 生命周期管理
+
+后端使用 FastAPI 的 lifespan 上下文管理器来管理应用生命周期：
+
+```python
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 启动时
+    init_db()                    # 初始化数据库
+    ensure_model_ids_and_status() # 确保模型配置
+    initialize_retrieval_tools() # 初始化检索工具
+    initialize_all_tools()       # 初始化所有工具
+    
+    # 启动定时任务
+    maintenance_task = asyncio.create_task(run_daily_maintenance_task())
+    billing_task = asyncio.create_task(run_hourly_subscription_billing())
+    cleanup_task = asyncio.create_task(run_pending_transaction_cleanup())
+    
+    yield
+    
+    # 关闭时
+    maintenance_task.cancel()
+    billing_task.cancel()
+    cleanup_task.cancel()
+```
+
+### 中间件配置
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+### 路由注册
+
+```python
+app.include_router(chat_router)
+app.include_router(models_router)
+app.include_router(props_router)
+app.include_router(auth_router)
+app.include_router(cloud_router)
+app.include_router(files_router, prefix="/api/files", tags=["files"])
+app.include_router(membership_router)
+app.include_router(manage_router)
+app.include_router(tools_router)
+app.include_router(tools_admin_router, prefix="/api")
+app.include_router(private_chat_router)
+```
+
+## API 模块
+
+### 认证模块 (api/auth/)
+
+| 文件 | 功能 |
+|------|------|
+| router.py | 认证路由 |
+| models.py | 认证数据模型 |
+| security.py | 安全工具（密码哈希、JWT） |
+| deps.py | 依赖注入（获取当前用户） |
+
+### 对话模块 (api/chat/)
+
+| 文件 | 功能 |
+|------|------|
+| router.py | 对话路由 |
+| private_router.py | 私有对话路由 |
+| proxy.py | 模型调用代理 |
+| upstream.py | 上游模型服务 |
+| utils.py | 对话工具函数 |
+| billing.py | 计费逻辑 |
+
+### 会员模块 (api/membership/)
+
+| 文件 | 功能 |
+|------|------|
+| plans.py | 套餐管理 |
+| subscriptions.py | 订阅管理 |
+| transactions.py | 交易记录 |
+| vouchers.py | 代金券 |
+| shop.py | 商店 |
+| status.py | 会员状态 |
+
+### 模型模块 (api/models/)
+
+| 文件 | 功能 |
+|------|------|
+| router.py | 模型路由 |
+| config.py | 模型配置 |
+| schema.py | 模型数据结构 |
+| types.py | 类型定义 |
+| models.json | 模型配置文件 |
+
+## 数据库
+
+### 数据库配置 (database.py)
+
+支持 SQLite 和 PostgreSQL 两种数据库：
+
+```python
+# SQLite（默认）
+DATABASE_URL = "sqlite:///./database.db"
+
+# PostgreSQL（环境变量配置）
+DB_TYPE = os.getenv("DB_TYPE", "sqlite")
+if DB_TYPE == "postgresql":
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = os.getenv("DB_PORT", "5432")
+    DB_USER = os.getenv("DB_USER", "user")
+    DB_PASS = os.getenv("DB_PASS", "password")
+    DB_NAME = os.getenv("DB_NAME", "lawchat")
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+```
+
+### 数据库模型 (models_db.py)
+
+核心数据表：
+
+- `users` - 用户表
+- `membership_plans` - 会员套餐表
+- `user_subscriptions` - 用户订阅表
+- `payment_transactions` - 支付交易表
+- `vouchers` - 代金券表
+- `cloud_chats` - 云端对话表
+- `private_chats` - 私有对话表
+- `usage_stats` - 用量统计表
+- `tools` - 工具表
+- `user_resource_packs` - 用户资源包表
+- `resource_products` - 资源产品表
+
+### 数据库初始化 (init_db.py)
+
+```bash
+python init_db.py
+```
+
+初始化步骤：
+1. 创建所有数据表
+2. 创建默认管理员账户
+3. 初始化默认套餐
+4. 初始化工具数据
+
+## 定时任务
+
+### 每日维护任务
+
+执行时间：北京时间每天 00:00 (UTC 16:00)
+
+功能：
+- 重置所有用户的每日用量统计
+- 检查并处理过期的会员
+- 检查并处理过期的资源包
+
+### 每小时订阅扣费
+
+执行时间：每小时执行一次
+
+功能：
+- 处理订阅用户的自动续费扣款
+
+### 待处理交易清理
+
+执行时间：每60秒执行一次
+
+功能：
+- 清理30分钟前创建仍处于 pending 状态的支付交易
