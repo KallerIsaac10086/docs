@@ -38,6 +38,7 @@
           },
           {
             "group": "其他",
+            "hidden": true,
             "pages": [
               "faq",
               "troubleshooting"
