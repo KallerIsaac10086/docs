@@ -28,6 +28,7 @@
           },
           {
             "group": "管理后台",
+            "hidden": true,
             "pages": [
               "admin/overview",
               "admin/users",
