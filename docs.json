@@ -1,0 +1,71 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "LawChat",
+  "colors": {
+    "primary": "#2563eb",
+    "light": "#3b82f6",
+    "dark": "#1d4ed8"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "开始",
+        "groups": [
+          {
+            "group": "欢迎",
+            "pages": ["index"]
+          },
+          {
+            "group": "快速入门",
+            "pages": ["getting-started/quickstart", "getting-started/platforms"]
+          }
+        ]
+      },
+      {
+        "tab": "功能使用",
+        "groups": [
+          {
+            "group": "对话功能",
+            "pages": ["features/chat", "features/models", "features/tools", "features/files"]
+          },
+          {
+            "group": "法律检索",
+            "pages": ["features/law-query"]
+          }
+        ]
+      },
+      {
+        "tab": "会员与计费",
+        "groups": [
+          {
+            "group": "会员套餐",
+            "pages": ["membership/overview", "membership/plans"]
+          },
+          {
+            "group": "积分规则",
+            "pages": ["membership/points", "membership/payment"]
+          },
+          {
+            "group": "常见问题",
+            "pages": ["membership/faq"]
+          }
+        ]
+      },
+      {
+        "tab": "模型技术",
+        "pages": ["law-lm"]
+      },
+      {
+        "tab": "帮助",
+        "pages": ["help/faq", "help/contact"]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/kallerisaac10086/docs"
+    }
+  }
+}
